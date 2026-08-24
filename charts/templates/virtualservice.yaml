@@ -1,0 +1,42 @@
+{{- if .Values.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  hosts:
+    - {{ .Values.istio.host }}
+  gateways:
+    - {{ .Values.istio.gateway }}
+  http:
+    - match:
+        - uri:
+            prefix: /ws/id
+      route:
+        - destination:
+            host: {{ .Release.Name }}-hbbs
+            port:
+              number: 21118
+    - match:
+        - uri:
+            prefix: /ws/relay
+      route:
+        - destination:
+            host: {{ .Release.Name }}-hbbr
+            port:
+              number: 21119
+    - match:
+        - uri:
+            prefix: /api/
+      directResponse:
+        status: 200
+        body:
+          string: "{}"
+    - route:
+        - destination:
+            host: {{ .Release.Name }}-webclient
+            port:
+              number: 80
+{{- end }}

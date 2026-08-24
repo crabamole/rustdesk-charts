@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-hbbr
+  labels:
+    app.kubernetes.io/name: hbbr
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.hbbr.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hbbr
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hbbr
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: hbbr
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.hbbr.image) }}
+          imagePullPolicy: {{ .Values.hbbr.image.pullPolicy }}
+          command: {{ .Values.hbbr.command | toJson }}
+          {{- if .Values.hbbr.env }}
+          env:
+            {{- range $key, $value := .Values.hbbr.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: relay
+              containerPort: 21117
+              protocol: TCP
+            - name: ws
+              containerPort: 21119
+              protocol: TCP

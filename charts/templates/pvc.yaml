@@ -1,0 +1,17 @@
+{{- if .Values.hbbs.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-hbbs-data
+  labels:
+    app.kubernetes.io/name: hbbs
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  accessModes: {{ .Values.hbbs.persistence.accessModes | toJson }}
+  {{- if .Values.hbbs.persistence.storageClass }}
+  storageClassName: {{ .Values.hbbs.persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.hbbs.persistence.size }}
+{{- end }}

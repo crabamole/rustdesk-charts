@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-webclient
+  labels:
+    app.kubernetes.io/name: webclient
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.webclient.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webclient
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webclient
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: webclient
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.webclient.image) }}
+          imagePullPolicy: {{ .Values.webclient.image.pullPolicy }}
+          {{- $hasEnv := false }}
+          {{- range $value := .Values.webclient.env }}{{ if $value }}{{ $hasEnv = true }}{{ end }}{{ end }}
+          {{- if $hasEnv }}
+          env:
+            {{- range $key, $value := .Values.webclient.env }}
+            {{- if $value }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP

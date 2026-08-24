@@ -1,0 +1,5 @@
+apiVersion: v2
+name: rustdesk
+description: RustDesk OSS remote desktop stack (hbbs, hbbr, webclient)
+version: 0.1.0
+appVersion: "1.4.9"

@@ -1,0 +1,2 @@
+# Local values overrides (may contain private config)
+charts/**/values-*.yaml
