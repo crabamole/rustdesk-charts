@@ -1,0 +1,73 @@
+suite: virtualservice
+templates:
+  - templates/virtualservice.yaml
+tests:
+  - it: is not rendered when istio is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders when istio is enabled
+    set:
+      istio.enabled: true
+      istio.host: rustdesk.example.com
+      istio.gateway: istio-system/default-gateway
+    asserts:
+      - isKind:
+          of: VirtualService
+      - equal:
+          path: spec.hosts[0]
+          value: rustdesk.example.com
+      - equal:
+          path: spec.gateways[0]
+          value: istio-system/default-gateway
+
+  - it: routes /ws/id to hbbs
+    set:
+      istio.enabled: true
+    asserts:
+      - equal:
+          path: spec.http[0].match[0].uri.prefix
+          value: /ws/id
+      - equal:
+          path: spec.http[0].route[0].destination.host
+          value: RELEASE-NAME-hbbs
+      - equal:
+          path: spec.http[0].route[0].destination.port.number
+          value: 21118
+
+  - it: routes /ws/relay to hbbr
+    set:
+      istio.enabled: true
+    asserts:
+      - equal:
+          path: spec.http[1].match[0].uri.prefix
+          value: /ws/relay
+      - equal:
+          path: spec.http[1].route[0].destination.host
+          value: RELEASE-NAME-hbbr
+      - equal:
+          path: spec.http[1].route[0].destination.port.number
+          value: 21119
+
+  - it: returns direct response for /api/
+    set:
+      istio.enabled: true
+    asserts:
+      - equal:
+          path: spec.http[2].match[0].uri.prefix
+          value: /api/
+      - equal:
+          path: spec.http[2].directResponse.status
+          value: 200
+
+  - it: routes default traffic to webclient
+    set:
+      istio.enabled: true
+    asserts:
+      - equal:
+          path: spec.http[3].route[0].destination.host
+          value: RELEASE-NAME-webclient
+      - equal:
+          path: spec.http[3].route[0].destination.port.number
+          value: 80

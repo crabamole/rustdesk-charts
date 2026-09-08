@@ -1,0 +1,139 @@
+suite: webclient deployment
+templates:
+  - templates/webclient-deployment.yaml
+tests:
+  - it: renders with default values
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-webclient
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: sets the default image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/rophy/rustdesk/web-client:1.4.9-20260823-1
+
+  - it: uses global image registry override
+    set:
+      global.imageRegistry: registry.example.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/rophy/rustdesk/web-client:1.4.9-20260823-1
+
+  - it: renders env vars when set
+    set:
+      webclient.env:
+        RUSTDESK_HOST: rustdesk.example.com
+        RUSTDESK_KEY: abc123
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RUSTDESK_HOST
+            value: rustdesk.example.com
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RUSTDESK_KEY
+            value: abc123
+
+  - it: omits env when all values are empty
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].env
+
+  - it: renders default resource limits
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 64Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 10m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 32Mi
+
+  - it: renders container port
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: http
+            containerPort: 80
+            protocol: TCP
+
+  - it: renders nodeSelector
+    set:
+      webclient.nodeSelector:
+        disktype: ssd
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+
+  - it: omits nodeSelector when empty
+    asserts:
+      - isNull:
+          path: spec.template.spec.nodeSelector
+
+  - it: renders tolerations
+    set:
+      webclient.tolerations:
+        - key: dedicated
+          operator: Equal
+          value: rustdesk
+          effect: NoSchedule
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: dedicated
+            operator: Equal
+            value: rustdesk
+            effect: NoSchedule
+
+  - it: renders affinity
+    set:
+      webclient.affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.affinity.podAntiAffinity
+
+  - it: renders pod annotations
+    set:
+      webclient.podAnnotations:
+        test-annotation: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations.test-annotation
+          value: "false"
+
+  - it: omits annotations when empty
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations
+
+  - it: renders pod labels
+    set:
+      webclient.podLabels:
+        team: frontend
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: frontend

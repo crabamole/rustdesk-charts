@@ -1,0 +1,221 @@
+suite: hbbs deployment
+templates:
+  - templates/hbbs-deployment.yaml
+tests:
+  - it: renders with default values
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-hbbs
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 1000
+
+  - it: sets the default image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/rophy/rustdesk-server:1.1.17-20260824-1
+
+  - it: uses global image registry override
+    set:
+      global.imageRegistry: registry.example.com
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/rophy/rustdesk-server:1.1.17-20260824-1
+
+  - it: sets relay address args
+    set:
+      hbbs.relayAddress: relay.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-r"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: relay.example.com
+
+  - it: omits args when relay address is empty
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].args
+
+  - it: renders environment variables
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ALWAYS_USE_RELAY
+            value: "Y"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RUST_LOG
+            value: info
+
+  - it: renders default resource limits
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "1"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 128Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 10m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 32Mi
+
+  - it: renders custom resources
+    set:
+      hbbs.resources:
+        limits:
+          cpu: "2"
+          memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "2"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 256Mi
+
+  - it: renders container ports
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: rendezvous
+            containerPort: 21116
+            protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: rendezvous-udp
+            containerPort: 21116
+            protocol: UDP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: ws
+            containerPort: 21118
+            protocol: TCP
+
+  - it: mounts keypair and data volumes
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /data
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: keypair
+            mountPath: /data/id_ed25519
+            subPath: id_ed25519
+            readOnly: true
+
+  - it: uses emptyDir when persistence is disabled
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+
+  - it: uses PVC when persistence is enabled
+    set:
+      hbbs.persistence.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            persistentVolumeClaim:
+              claimName: RELEASE-NAME-hbbs-data
+
+  - it: sets container security context
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - contains:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          content: "ALL"
+
+  - it: renders nodeSelector
+    set:
+      hbbs.nodeSelector:
+        disktype: ssd
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector.disktype
+          value: ssd
+
+  - it: omits nodeSelector when empty
+    asserts:
+      - isNull:
+          path: spec.template.spec.nodeSelector
+
+  - it: renders affinity
+    set:
+      hbbs.affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: topology.kubernetes.io/zone
+                    operator: In
+                    values:
+                      - us-east-1a
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.affinity.nodeAffinity
+
+  - it: renders tolerations
+    set:
+      hbbs.tolerations:
+        - key: dedicated
+          operator: Equal
+          value: rustdesk
+          effect: NoSchedule
+    asserts:
+      - contains:
+          path: spec.template.spec.tolerations
+          content:
+            key: dedicated
+            operator: Equal
+            value: rustdesk
+            effect: NoSchedule
+
+  - it: renders pod annotations
+    set:
+      hbbs.podAnnotations:
+        test-annotation: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations.test-annotation
+          value: "true"
+
+  - it: omits annotations when empty
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations
+
+  - it: renders pod labels
+    set:
+      hbbs.podLabels:
+        team: infra
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: infra
