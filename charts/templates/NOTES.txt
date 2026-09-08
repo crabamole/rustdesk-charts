@@ -1,0 +1,20 @@
+RustDesk has been deployed.
+
+Components:
+  - hbbs (rendezvous server): {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}
+  - hbbr (relay server):      {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
+  - webclient:                 {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
+
+{{- if .Values.istio.enabled }}
+
+Web client URL: https://{{ .Values.istio.host }}
+{{- else }}
+
+To access the web client, expose the webclient service:
+  kubectl port-forward svc/{{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }} 8080:80 -n {{ .Release.Namespace }}
+  Then open http://localhost:8080
+{{- end }}
+
+Service ports:
+  hbbs: 21116 (rendezvous TCP/UDP), 21118 (WebSocket)
+  hbbr: 21117 (relay TCP), 21119 (WebSocket)

@@ -1,14 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-webclient
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
   labels:
-    app.kubernetes.io/name: webclient
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "rustdesk.labels" (dict "context" . "component" "webclient") | nindent 4 }}
 spec:
   selector:
-    app.kubernetes.io/name: webclient
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "webclient") | nindent 4 }}
   ports:
     - name: http
       port: 80

@@ -8,13 +8,32 @@ tests:
           of: Deployment
       - equal:
           path: metadata.name
-          value: RELEASE-NAME-hbbs
+          value: RELEASE-NAME-rustdesk-hbbs
       - equal:
           path: spec.strategy.type
           value: Recreate
       - equal:
           path: spec.template.spec.securityContext.fsGroup
           value: 1000
+
+  - it: renders standard labels
+    asserts:
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: "1.4.9"
+
+  - it: respects fullnameOverride
+    set:
+      fullnameOverride: myrd
+    asserts:
+      - equal:
+          path: metadata.name
+          value: myrd-hbbs
 
   - it: sets the default image
     asserts:
@@ -58,6 +77,13 @@ tests:
           content:
             name: RUST_LOG
             value: info
+
+  - it: omits env when empty
+    set:
+      hbbs.env: null
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].env
 
   - it: renders default resource limits
     asserts:
@@ -141,7 +167,7 @@ tests:
           content:
             name: data
             persistentVolumeClaim:
-              claimName: RELEASE-NAME-hbbs-data
+              claimName: RELEASE-NAME-rustdesk-hbbs-data
 
   - it: sets container security context
     asserts:
@@ -151,6 +177,9 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].securityContext.capabilities.drop
           content: "ALL"
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.seccompProfile.type
+          value: RuntimeDefault
 
   - it: renders nodeSelector
     set:

@@ -2,9 +2,9 @@
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ include "rustdesk.fullname" . }}
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "rustdesk.labels" (dict "context" . "component" "hbbs") | nindent 4 }}
 spec:
   hosts:
     - {{ .Values.istio.host }}
@@ -16,7 +16,7 @@ spec:
             prefix: /ws/id
       route:
         - destination:
-            host: {{ .Release.Name }}-hbbs
+            host: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}
             port:
               number: 21118
     - match:
@@ -24,7 +24,7 @@ spec:
             prefix: /ws/relay
       route:
         - destination:
-            host: {{ .Release.Name }}-hbbr
+            host: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
             port:
               number: 21119
     - match:
@@ -36,7 +36,7 @@ spec:
           string: "{}"
     - route:
         - destination:
-            host: {{ .Release.Name }}-webclient
+            host: {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
             port:
               number: 80
 {{- end }}

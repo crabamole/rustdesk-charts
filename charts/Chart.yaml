@@ -3,3 +3,17 @@ name: rustdesk
 description: RustDesk OSS remote desktop stack (hbbs, hbbr, webclient)
 version: 0.1.0
 appVersion: "1.4.9"
+type: application
+kubeVersion: ">=1.24.0-0"
+keywords:
+  - remote-desktop
+  - rustdesk
+  - vnc
+home: https://github.com/rophy/rustdesk-charts
+sources:
+  - https://github.com/rophy/rustdesk-charts
+  - https://github.com/rustdesk/rustdesk
+  - https://github.com/rustdesk/rustdesk-server
+maintainers:
+  - name: Rophy Tsai
+    email: rophy123@gmail.com

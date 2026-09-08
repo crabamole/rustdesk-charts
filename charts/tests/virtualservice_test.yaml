@@ -22,6 +22,25 @@ tests:
           path: spec.gateways[0]
           value: istio-system/default-gateway
 
+  - it: renders standard labels
+    set:
+      istio.enabled: true
+    asserts:
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: uses fullname for metadata name
+    set:
+      istio.enabled: true
+      fullnameOverride: myrd
+    asserts:
+      - equal:
+          path: metadata.name
+          value: myrd
+
   - it: routes /ws/id to hbbs
     set:
       istio.enabled: true
@@ -31,7 +50,7 @@ tests:
           value: /ws/id
       - equal:
           path: spec.http[0].route[0].destination.host
-          value: RELEASE-NAME-hbbs
+          value: RELEASE-NAME-rustdesk-hbbs
       - equal:
           path: spec.http[0].route[0].destination.port.number
           value: 21118
@@ -45,7 +64,7 @@ tests:
           value: /ws/relay
       - equal:
           path: spec.http[1].route[0].destination.host
-          value: RELEASE-NAME-hbbr
+          value: RELEASE-NAME-rustdesk-hbbr
       - equal:
           path: spec.http[1].route[0].destination.port.number
           value: 21119
@@ -67,7 +86,22 @@ tests:
     asserts:
       - equal:
           path: spec.http[3].route[0].destination.host
-          value: RELEASE-NAME-webclient
+          value: RELEASE-NAME-rustdesk-webclient
       - equal:
           path: spec.http[3].route[0].destination.port.number
           value: 80
+
+  - it: uses fullnameOverride in route destinations
+    set:
+      istio.enabled: true
+      fullnameOverride: myrd
+    asserts:
+      - equal:
+          path: spec.http[0].route[0].destination.host
+          value: myrd-hbbs
+      - equal:
+          path: spec.http[1].route[0].destination.host
+          value: myrd-hbbr
+      - equal:
+          path: spec.http[3].route[0].destination.host
+          value: myrd-webclient

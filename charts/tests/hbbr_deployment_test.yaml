@@ -8,10 +8,29 @@ tests:
           of: Deployment
       - equal:
           path: metadata.name
-          value: RELEASE-NAME-hbbr
+          value: RELEASE-NAME-rustdesk-hbbr
       - equal:
           path: spec.replicas
           value: 1
+
+  - it: renders standard labels
+    asserts:
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: "1.4.9"
+
+  - it: respects fullnameOverride
+    set:
+      fullnameOverride: myrd
+    asserts:
+      - equal:
+          path: metadata.name
+          value: myrd-hbbr
 
   - it: sets the default image
     asserts:
@@ -35,7 +54,7 @@ tests:
           path: spec.replicas
           value: 3
 
-  - it: omits env when all values are empty
+  - it: omits env when empty
     asserts:
       - isNull:
           path: spec.template.spec.containers[0].env
@@ -83,6 +102,9 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
           value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.seccompProfile.type
+          value: RuntimeDefault
 
   - it: renders nodeSelector
     set:

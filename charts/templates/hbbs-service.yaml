@@ -1,14 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-hbbs
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}
   labels:
-    app.kubernetes.io/name: hbbs
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "rustdesk.labels" (dict "context" . "component" "hbbs") | nindent 4 }}
 spec:
   selector:
-    app.kubernetes.io/name: hbbs
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbs") | nindent 4 }}
   ports:
     - name: rendezvous
       port: 21116

@@ -1,21 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-hbbr
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
   labels:
-    app.kubernetes.io/name: hbbr
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "rustdesk.labels" (dict "context" . "component" "hbbr") | nindent 4 }}
 spec:
   replicas: {{ .Values.hbbr.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: hbbr
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbr") | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: hbbr
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbr") | nindent 8 }}
         {{- with .Values.hbbr.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
