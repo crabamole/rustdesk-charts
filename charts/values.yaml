@@ -43,6 +43,13 @@ webclient:
     tag: "1.4.9-20260823-1"
     pullPolicy: IfNotPresent
   replicas: 1
+  resources:
+    limits:
+      cpu: "1"
+      memory: 64Mi
+    requests:
+      cpu: 10m
+      memory: 32Mi
   env:
     RUSTDESK_HOST: ""
     RUSTDESK_RELAY: ""
