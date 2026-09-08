@@ -16,7 +16,26 @@ spec:
       labels:
         app.kubernetes.io/name: webclient
         app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- with .Values.webclient.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.webclient.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
+      {{- with .Values.webclient.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webclient.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webclient.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: webclient
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.webclient.image) }}

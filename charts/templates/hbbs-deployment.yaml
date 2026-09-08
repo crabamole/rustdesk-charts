@@ -18,9 +18,28 @@ spec:
       labels:
         app.kubernetes.io/name: hbbs
         app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- with .Values.hbbs.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.hbbs.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       securityContext:
         fsGroup: 1000
+      {{- with .Values.hbbs.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.hbbs.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.hbbs.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: hbbs
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.hbbs.image) }}
