@@ -8,14 +8,6 @@ spec:
   selector:
     {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbs") | nindent 4 }}
   ports:
-    - name: rendezvous
-      port: 21116
-      targetPort: rendezvous
-      protocol: TCP
-    - name: rendezvous-udp
-      port: 21116
-      targetPort: rendezvous-udp
-      protocol: UDP
     - name: ws
       port: 21118
       targetPort: ws

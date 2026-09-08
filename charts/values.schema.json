@@ -83,7 +83,7 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "gateway": { "type": "string" },
-        "host": { "type": "string" }
+        "hosts": { "type": "array", "items": { "type": "string" } }
       }
     }
   },

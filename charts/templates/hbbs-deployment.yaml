@@ -65,12 +65,6 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           ports:
-            - name: rendezvous
-              containerPort: 21116
-              protocol: TCP
-            - name: rendezvous-udp
-              containerPort: 21116
-              protocol: UDP
             - name: ws
               containerPort: 21118
               protocol: TCP

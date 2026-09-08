@@ -91,4 +91,5 @@ webclient:
 istio:
   enabled: false
   gateway: istio-system/default-gateway
-  host: rustdesk.example.com
+  hosts:
+    - rustdesk.example.com

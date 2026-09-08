@@ -8,10 +8,6 @@ spec:
   selector:
     {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbr") | nindent 4 }}
   ports:
-    - name: relay
-      port: 21117
-      targetPort: relay
-      protocol: TCP
     - name: ws
       port: 21119
       targetPort: ws

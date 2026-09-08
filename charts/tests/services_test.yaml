@@ -17,17 +17,13 @@ tests:
       - contains:
           path: spec.ports
           content:
-            name: rendezvous
-            port: 21116
-            targetPort: rendezvous
-            protocol: TCP
-      - contains:
-          path: spec.ports
-          content:
             name: ws
             port: 21118
             targetPort: ws
             protocol: TCP
+      - lengthEqual:
+          path: spec.ports
+          count: 1
 
   - it: renders hbbr service with correct ports
     templates:
@@ -41,17 +37,13 @@ tests:
       - contains:
           path: spec.ports
           content:
-            name: relay
-            port: 21117
-            targetPort: relay
-            protocol: TCP
-      - contains:
-          path: spec.ports
-          content:
             name: ws
             port: 21119
             targetPort: ws
             protocol: TCP
+      - lengthEqual:
+          path: spec.ports
+          count: 1
 
   - it: renders webclient service with correct port
     templates:

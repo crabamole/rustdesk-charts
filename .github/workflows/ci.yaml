@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v4
+
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git
+
+      - name: Lint
+        run: helm lint charts/
+
+      - name: Unit tests
+        run: helm unittest charts/
+
+      - name: Get chart version
+        if: github.event_name == 'push'
+        id: chart
+        run: |
+          version=$(grep '^version:' charts/Chart.yaml | awk '{print $2}')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag exists
+        if: github.event_name == 'push'
+        id: check
+        run: |
+          if git rev-parse "v${{ steps.chart.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to GHCR
+        if: github.event_name == 'push' && steps.check.outputs.exists == 'false'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package chart
+        if: github.event_name == 'push' && steps.check.outputs.exists == 'false'
+        run: helm package charts/
+
+      - name: Push to OCI registry
+        if: github.event_name == 'push' && steps.check.outputs.exists == 'false'
+        run: helm push rustdesk-${{ steps.chart.outputs.version }}.tgz oci://ghcr.io/rophy/charts
+
+      - name: Create git tag
+        if: github.event_name == 'push' && steps.check.outputs.exists == 'false'
+        run: |
+          git tag "v${{ steps.chart.outputs.version }}"
+          git push origin "v${{ steps.chart.outputs.version }}"

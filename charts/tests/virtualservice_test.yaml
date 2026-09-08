@@ -10,7 +10,8 @@ tests:
   - it: renders when istio is enabled
     set:
       istio.enabled: true
-      istio.host: rustdesk.example.com
+      istio.hosts:
+        - rustdesk.example.com
       istio.gateway: istio-system/default-gateway
     asserts:
       - isKind:
@@ -21,6 +22,20 @@ tests:
       - equal:
           path: spec.gateways[0]
           value: istio-system/default-gateway
+
+  - it: renders multiple hosts
+    set:
+      istio.enabled: true
+      istio.hosts:
+        - rustdesk.example.com
+        - rustdesk.example.localhost
+    asserts:
+      - equal:
+          path: spec.hosts[0]
+          value: rustdesk.example.com
+      - equal:
+          path: spec.hosts[1]
+          value: rustdesk.example.localhost
 
   - it: renders standard labels
     set:

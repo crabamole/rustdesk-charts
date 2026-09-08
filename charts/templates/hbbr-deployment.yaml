@@ -58,9 +58,6 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           ports:
-            - name: relay
-              containerPort: 21117
-              protocol: TCP
             - name: ws
               containerPort: 21119
               protocol: TCP

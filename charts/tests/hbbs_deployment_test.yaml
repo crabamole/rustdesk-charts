@@ -119,21 +119,12 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].ports
           content:
-            name: rendezvous
-            containerPort: 21116
-            protocol: TCP
-      - contains:
-          path: spec.template.spec.containers[0].ports
-          content:
-            name: rendezvous-udp
-            containerPort: 21116
-            protocol: UDP
-      - contains:
-          path: spec.template.spec.containers[0].ports
-          content:
             name: ws
             containerPort: 21118
             protocol: TCP
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 1
 
   - it: mounts keypair and data volumes
     asserts:

@@ -16,5 +16,5 @@ To access the web client, expose the webclient service:
 {{- end }}
 
 Service ports:
-  hbbs: 21116 (rendezvous TCP/UDP), 21118 (WebSocket)
-  hbbr: 21117 (relay TCP), 21119 (WebSocket)
+  hbbs: 21118 (WebSocket)
+  hbbr: 21119 (WebSocket)

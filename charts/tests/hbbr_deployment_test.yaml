@@ -87,15 +87,12 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].ports
           content:
-            name: relay
-            containerPort: 21117
-            protocol: TCP
-      - contains:
-          path: spec.template.spec.containers[0].ports
-          content:
             name: ws
             containerPort: 21119
             protocol: TCP
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 1
 
   - it: sets container security context
     asserts:

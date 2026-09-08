@@ -77,7 +77,8 @@ Enable Istio routing:
 istio:
   enabled: true
   gateway: istio-system/default-gateway
-  host: rustdesk.example.com
+  hosts:
+    - rustdesk.example.com
 ```
 
 Native clients connect with:
