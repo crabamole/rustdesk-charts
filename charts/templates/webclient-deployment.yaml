@@ -32,12 +32,6 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
           ports:
             - name: http
               containerPort: 80
