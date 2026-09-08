@@ -31,6 +31,10 @@ spec:
               value: {{ $value | quote }}
             {{- end }}
           {{- end }}
+          {{- with .Values.hbbr.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

@@ -19,6 +19,13 @@ hbbs:
   env:
     ALWAYS_USE_RELAY: "Y"
     RUST_LOG: info
+  resources:
+    limits:
+      cpu: "1"
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 32Mi
   persistence:
     enabled: false
     size: 100Mi
@@ -34,6 +41,13 @@ hbbr:
     pullPolicy: IfNotPresent
   command: ["hbbr"]
   replicas: 1
+  resources:
+    limits:
+      cpu: "1"
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 32Mi
   env: {}
 
 webclient:
