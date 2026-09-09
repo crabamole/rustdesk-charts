@@ -15,7 +15,7 @@ Pre-packaged RustDesk installers for corporate deployment.
 ## Extract installers
 
 ```bash
-docker create --name rustdesk-bundle ghcr.io/rophy/rustdesk-bundle:1.4.9
+docker create --name rustdesk-bundle ghcr.io/rophy/rustdesk/bundle:1.4.9
 docker cp rustdesk-bundle:/bundles/installers ./installers
 docker rm rustdesk-bundle
 ```

@@ -1,0 +1,44 @@
+name: Bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bundles/**
+  workflow_dispatch:
+    inputs:
+      version:
+        description: RustDesk version to bundle
+        required: true
+        default: "1.4.9"
+
+permissions:
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(grep '^ARG RUSTDESK_VERSION=' bundles/Dockerfile | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          TAG="${{ steps.version.outputs.value }}-${SHORT_SHA}"
+          docker build \
+            --build-arg RUSTDESK_VERSION=${{ steps.version.outputs.value }} \
+            -t ghcr.io/rophy/rustdesk/bundle:${TAG} \
+            bundles/
+          docker push ghcr.io/rophy/rustdesk/bundle:${TAG}
