@@ -31,6 +31,10 @@ api-server = 'https://rustdesk.example.com'
 key = '<your-public-key>'
 allow-websocket = 'Y'
 disable-udp = 'Y'
+direct-server = 'Y'
+enable-udp-punch = 'N'
+enable-lan-discovery = 'N'
+allow-insecure-tls-fallback = 'Y'
 ```
 
 ### Windows
