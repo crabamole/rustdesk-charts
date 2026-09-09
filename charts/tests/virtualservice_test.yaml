@@ -84,7 +84,7 @@ tests:
           path: spec.http[1].route[0].destination.port.number
           value: 21119
 
-  - it: returns direct response for /api/
+  - it: routes /api/ to webclient
     set:
       istio.enabled: true
     asserts:
@@ -92,8 +92,11 @@ tests:
           path: spec.http[2].match[0].uri.prefix
           value: /api/
       - equal:
-          path: spec.http[2].directResponse.status
-          value: 200
+          path: spec.http[2].route[0].destination.host
+          value: RELEASE-NAME-rustdesk-webclient
+      - equal:
+          path: spec.http[2].route[0].destination.port.number
+          value: 80
 
   - it: routes default traffic to webclient
     set:
@@ -117,6 +120,9 @@ tests:
       - equal:
           path: spec.http[1].route[0].destination.host
           value: myrd-hbbr
+      - equal:
+          path: spec.http[2].route[0].destination.host
+          value: myrd-webclient
       - equal:
           path: spec.http[3].route[0].destination.host
           value: myrd-webclient

@@ -16,10 +16,11 @@ spec:
         {{- with .Values.webclient.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.webclient.podAnnotations }}
       annotations:
+        checksum/nginx-config: {{ include (print $.Template.BasePath "/webclient-configmap.yaml") . | sha256sum }}
+        {{- with .Values.webclient.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       {{- with .Values.webclient.nodeSelector }}
       nodeSelector:
@@ -33,6 +34,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
       containers:
         - name: webclient
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.webclient.image) }}
@@ -48,6 +53,10 @@ spec:
             {{- end }}
             {{- end }}
           {{- end }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
           {{- with .Values.webclient.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

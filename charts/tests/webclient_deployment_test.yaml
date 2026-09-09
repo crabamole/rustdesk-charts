@@ -1,8 +1,10 @@
 suite: webclient deployment
 templates:
   - templates/webclient-deployment.yaml
+  - templates/webclient-configmap.yaml
 tests:
   - it: renders with default values
+    template: templates/webclient-deployment.yaml
     asserts:
       - isKind:
           of: Deployment
@@ -14,6 +16,7 @@ tests:
           value: 1
 
   - it: renders standard labels
+    template: templates/webclient-deployment.yaml
     asserts:
       - isNotNull:
           path: metadata.labels["helm.sh/chart"]
@@ -25,6 +28,7 @@ tests:
           value: "1.4.9"
 
   - it: respects fullnameOverride
+    template: templates/webclient-deployment.yaml
     set:
       fullnameOverride: myrd
     asserts:
@@ -33,12 +37,14 @@ tests:
           value: myrd-webclient
 
   - it: sets the default image
+    template: templates/webclient-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
           value: ghcr.io/rophy/rustdesk/web-client:1.4.9-20260823-1
 
   - it: uses global image registry override
+    template: templates/webclient-deployment.yaml
     set:
       global.imageRegistry: registry.example.com
     asserts:
@@ -47,6 +53,7 @@ tests:
           value: registry.example.com/rophy/rustdesk/web-client:1.4.9-20260823-1
 
   - it: renders env vars when set
+    template: templates/webclient-deployment.yaml
     set:
       webclient.env:
         RUSTDESK_HOST: rustdesk.example.com
@@ -64,11 +71,13 @@ tests:
             value: abc123
 
   - it: omits env when all values are empty
+    template: templates/webclient-deployment.yaml
     asserts:
       - isNull:
           path: spec.template.spec.containers[0].env
 
   - it: renders default resource limits
+    template: templates/webclient-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].resources.limits.cpu
@@ -84,6 +93,7 @@ tests:
           value: 32Mi
 
   - it: renders container port
+    template: templates/webclient-deployment.yaml
     asserts:
       - contains:
           path: spec.template.spec.containers[0].ports
@@ -93,6 +103,7 @@ tests:
             protocol: TCP
 
   - it: sets container security context
+    template: templates/webclient-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
@@ -105,6 +116,7 @@ tests:
           value: RuntimeDefault
 
   - it: renders nodeSelector
+    template: templates/webclient-deployment.yaml
     set:
       webclient.nodeSelector:
         disktype: ssd
@@ -114,11 +126,13 @@ tests:
           value: ssd
 
   - it: omits nodeSelector when empty
+    template: templates/webclient-deployment.yaml
     asserts:
       - isNull:
           path: spec.template.spec.nodeSelector
 
   - it: renders tolerations
+    template: templates/webclient-deployment.yaml
     set:
       webclient.tolerations:
         - key: dedicated
@@ -135,6 +149,7 @@ tests:
             effect: NoSchedule
 
   - it: renders affinity
+    template: templates/webclient-deployment.yaml
     set:
       webclient.affinity:
         podAntiAffinity:
@@ -147,6 +162,7 @@ tests:
           path: spec.template.spec.affinity.podAntiAffinity
 
   - it: renders pod annotations
+    template: templates/webclient-deployment.yaml
     set:
       webclient.podAnnotations:
         test-annotation: "false"
@@ -155,12 +171,14 @@ tests:
           path: spec.template.metadata.annotations.test-annotation
           value: "false"
 
-  - it: omits annotations when empty
+  - it: always has nginx config checksum annotation
+    template: templates/webclient-deployment.yaml
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations
+      - isNotNull:
+          path: spec.template.metadata.annotations["checksum/nginx-config"]
 
   - it: renders pod labels
+    template: templates/webclient-deployment.yaml
     set:
       webclient.podLabels:
         team: frontend

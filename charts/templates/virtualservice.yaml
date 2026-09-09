@@ -30,10 +30,11 @@ spec:
     - match:
         - uri:
             prefix: /api/
-      directResponse:
-        status: 200
-        body:
-          string: "{}"
+      route:
+        - destination:
+            host: {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
+            port:
+              number: 80
     - route:
         - destination:
             host: {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
