@@ -70,11 +70,19 @@ tests:
             name: RUSTDESK_KEY
             value: abc123
 
-  - it: omits env when all values are empty
+  - it: renders default websocket path env vars
     template: templates/webclient-deployment.yaml
     asserts:
-      - isNull:
+      - contains:
           path: spec.template.spec.containers[0].env
+          content:
+            name: RUSTDESK_HOST
+            value: "/ws/id"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RUSTDESK_RELAY
+            value: "/ws/relay"
 
   - it: renders default resource limits
     template: templates/webclient-deployment.yaml
