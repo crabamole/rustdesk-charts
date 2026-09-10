@@ -83,10 +83,7 @@ webclient:
       cpu: 10m
       memory: 32Mi
   env:
-    RUSTDESK_HOST: ""
-    RUSTDESK_RELAY: ""
     RUSTDESK_KEY: ""
-    RUSTDESK_API: ""
 
 istio:
   enabled: false
