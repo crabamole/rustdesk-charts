@@ -85,6 +85,28 @@ webclient:
   env:
     RUSTDESK_KEY: ""
 
+apiserver:
+  enabled: false
+  image:
+    registry: ""
+    repository: sctgdesk-api-server
+    tag: "dev"
+    pullPolicy: IfNotPresent
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  resources:
+    limits:
+      cpu: "1"
+      memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 64Mi
+  env:
+    OAUTH2_CREATE_USER: "1"
+
 istio:
   enabled: false
   gateway: istio-system/default-gateway

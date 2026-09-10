@@ -1,0 +1,66 @@
+{{- if .Values.apiserver.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "apiserver") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "rustdesk.selectorLabels" (dict "context" . "component" "apiserver") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rustdesk.selectorLabels" (dict "context" . "component" "apiserver") | nindent 8 }}
+        {{- with .Values.apiserver.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.apiserver.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.apiserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiserver.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: apiserver
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.apiserver.image) }}
+          imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
+          {{- $hasEnv := false }}
+          {{- range $value := .Values.apiserver.env }}{{ if $value }}{{ $hasEnv = true }}{{ end }}{{ end }}
+          {{- if $hasEnv }}
+          env:
+            {{- range $key, $value := .Values.apiserver.env }}
+            {{- if $value }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.apiserver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 21114
+              protocol: TCP
+{{- end }}
