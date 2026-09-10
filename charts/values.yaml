@@ -83,10 +83,6 @@ webclient:
       cpu: 10m
       memory: 32Mi
   env:
-    # WebSocket paths matching the Istio VirtualService routes.
-    # The compiled JS defaults to /hbbs and /hbbr which won't match.
-    RUSTDESK_HOST: "/ws/id"
-    RUSTDESK_RELAY: "/ws/relay"
     RUSTDESK_KEY: ""
 
 istio:
