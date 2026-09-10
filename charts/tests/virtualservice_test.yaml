@@ -56,73 +56,24 @@ tests:
           path: metadata.name
           value: myrd
 
-  - it: routes /ws/id to hbbs
+  - it: routes all traffic to webclient
     set:
       istio.enabled: true
     asserts:
-      - equal:
-          path: spec.http[0].match[0].uri.prefix
-          value: /ws/id
       - equal:
           path: spec.http[0].route[0].destination.host
-          value: RELEASE-NAME-rustdesk-hbbs
+          value: RELEASE-NAME-rustdesk-webclient
       - equal:
           path: spec.http[0].route[0].destination.port.number
-          value: 21118
-
-  - it: routes /ws/relay to hbbr
-    set:
-      istio.enabled: true
-    asserts:
-      - equal:
-          path: spec.http[1].match[0].uri.prefix
-          value: /ws/relay
-      - equal:
-          path: spec.http[1].route[0].destination.host
-          value: RELEASE-NAME-rustdesk-hbbr
-      - equal:
-          path: spec.http[1].route[0].destination.port.number
-          value: 21119
-
-  - it: routes /api/ to webclient
-    set:
-      istio.enabled: true
-    asserts:
-      - equal:
-          path: spec.http[2].match[0].uri.prefix
-          value: /api/
-      - equal:
-          path: spec.http[2].route[0].destination.host
-          value: RELEASE-NAME-rustdesk-webclient
-      - equal:
-          path: spec.http[2].route[0].destination.port.number
           value: 80
+      - isNull:
+          path: spec.http[0].match
 
-  - it: routes default traffic to webclient
-    set:
-      istio.enabled: true
-    asserts:
-      - equal:
-          path: spec.http[3].route[0].destination.host
-          value: RELEASE-NAME-rustdesk-webclient
-      - equal:
-          path: spec.http[3].route[0].destination.port.number
-          value: 80
-
-  - it: uses fullnameOverride in route destinations
+  - it: uses fullnameOverride in route destination
     set:
       istio.enabled: true
       fullnameOverride: myrd
     asserts:
       - equal:
           path: spec.http[0].route[0].destination.host
-          value: myrd-hbbs
-      - equal:
-          path: spec.http[1].route[0].destination.host
-          value: myrd-hbbr
-      - equal:
-          path: spec.http[2].route[0].destination.host
-          value: myrd-webclient
-      - equal:
-          path: spec.http[3].route[0].destination.host
           value: myrd-webclient
