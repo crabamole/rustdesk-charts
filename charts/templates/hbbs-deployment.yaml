@@ -84,10 +84,21 @@ spec:
               mountPath: /data/id_ed25519.pub
               subPath: {{ .Values.keypair.publicKeyKey }}
               readOnly: true
+            {{- if .Values.hbbs.oauth2 }}
+            - name: oauth2
+              mountPath: /data/oauth2.toml
+              subPath: oauth2.toml
+              readOnly: true
+            {{- end }}
       volumes:
         - name: keypair
           secret:
             secretName: {{ .Values.keypair.secretName }}
+        {{- if .Values.hbbs.oauth2 }}
+        - name: oauth2
+          configMap:
+            name: {{ .Release.Name }}-hbbs-oauth2
+        {{- end }}
         - name: data
           {{- if .Values.hbbs.persistence.enabled }}
           persistentVolumeClaim:
