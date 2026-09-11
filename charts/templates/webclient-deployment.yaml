@@ -64,6 +64,9 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN", "NET_BIND_SERVICE", "SETGID", "SETUID"]
             seccompProfile:
               type: RuntimeDefault
           ports:
