@@ -68,6 +68,11 @@ spec:
             - name: ws
               containerPort: 21118
               protocol: TCP
+            {{- if .Values.hbbs.apiserver }}
+            - name: api
+              containerPort: 21114
+              protocol: TCP
+            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data

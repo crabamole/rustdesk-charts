@@ -59,17 +59,24 @@ data:
                 proxy_read_timeout 300s;
             }
 
-            {{- if .Values.apiserver.enabled }}
+            {{- $apiHost := "" }}
+            {{- if and .Values.apiserver .Values.apiserver.enabled }}
+            {{- $apiHost = printf "%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")) }}
+            {{- else if .Values.hbbs.apiserver }}
+            {{- $apiHost = printf "%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "hbbs")) }}
+            {{- end }}
+            {{- if $apiHost }}
             location /api/ {
-                proxy_pass http://{{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }}:21114;
+                proxy_pass http://{{ $apiHost }};
                 proxy_set_header Host $host;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
             }
 
-            location /ui/ {
-                proxy_pass http://{{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }}:21114;
+            location /ui {
+                proxy_pass http://{{ $apiHost }};
                 proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-Proto $scheme;
             }
             {{- else }}
             location /api/ {
