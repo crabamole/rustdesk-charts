@@ -72,11 +72,6 @@ spec:
             - name: ws
               containerPort: 21118
               protocol: TCP
-            {{- if .Values.hbbs.apiserver }}
-            - name: api
-              containerPort: 21114
-              protocol: TCP
-            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data
@@ -94,6 +89,52 @@ spec:
               subPath: oauth2.toml
               readOnly: true
             {{- end }}
+        {{- if and .Values.apiserver .Values.apiserver.enabled }}
+        - name: apiserver
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.apiserver.image) }}
+          imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
+          command: ["/app/sctgdesk-api-server"]
+          args:
+            - "--address"
+            - "0.0.0.0"
+            - "--port"
+            - {{ .Values.apiserver.port | default 21114 | quote }}
+          workingDir: /data
+          {{- if .Values.apiserver.env }}
+          env:
+            {{- range $key, $value := .Values.apiserver.env }}
+            {{- if $value }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.apiserver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: api
+              containerPort: {{ .Values.apiserver.port | default 21114 }}
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .Values.hbbs.oauth2 }}
+            - name: oauth2
+              mountPath: /data/oauth2.toml
+              subPath: oauth2.toml
+              readOnly: true
+            {{- end }}
+        {{- end }}
       volumes:
         - name: keypair
           secret:

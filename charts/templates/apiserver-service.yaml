@@ -7,10 +7,10 @@ metadata:
     {{- include "rustdesk.labels" (dict "context" . "component" "apiserver") | nindent 4 }}
 spec:
   selector:
-    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "apiserver") | nindent 4 }}
+    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbs") | nindent 4 }}
   ports:
     - name: http
       port: 21114
-      targetPort: http
+      targetPort: api
       protocol: TCP
 {{- end }}

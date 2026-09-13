@@ -88,16 +88,12 @@ webclient:
 
 apiserver:
   enabled: false
+  port: 21114
   image:
     registry: ""
     repository: sctgdesk-api-server
     tag: "dev"
     pullPolicy: IfNotPresent
-  podAnnotations: {}
-  podLabels: {}
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
   resources:
     limits:
       cpu: "1"

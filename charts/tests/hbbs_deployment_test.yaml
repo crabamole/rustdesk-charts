@@ -285,21 +285,60 @@ tests:
             name: oauth2
           any: true
 
-  - it: exposes api port when hbbs.apiserver is true
+  - it: adds apiserver sidecar when apiserver is enabled
     set:
-      hbbs.apiserver: true
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+        env:
+          OAUTH2_CONFIG_FILE: /data/oauth2.toml
     asserts:
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: apiserver
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: ghcr.io/rophy/sctgdesk-api-server:dev
       - contains:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[1].ports
           content:
             name: api
             containerPort: 21114
             protocol: TCP
-
-  - it: omits api port when hbbs.apiserver is false
-    asserts:
-      - notContains:
-          path: spec.template.spec.containers[0].ports
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
           content:
-            name: api
-          any: true
+            name: data
+            mountPath: /data
+
+  - it: omits apiserver sidecar when apiserver is disabled
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+
+  - it: apiserver sidecar mounts oauth2 when configured
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+      hbbs:
+        oauth2: |
+          [[provider]]
+          provider = "Dex"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: oauth2
+            mountPath: /data/oauth2.toml
+            subPath: oauth2.toml
+            readOnly: true
