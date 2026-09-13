@@ -42,6 +42,7 @@ spec:
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.hbbs.image) }}
           imagePullPolicy: {{ .Values.hbbs.image.pullPolicy }}
           command: {{ .Values.hbbs.command | toJson }}
+          workingDir: /data
           {{- if .Values.hbbs.relayAddress }}
           args:
             - "-r"
@@ -63,6 +64,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
