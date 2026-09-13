@@ -63,4 +63,17 @@ spec:
             - name: http
               containerPort: 21114
               protocol: TCP
+          {{- if .Values.hbbs.oauth2 }}
+          volumeMounts:
+            - name: oauth2
+              mountPath: /data/oauth2.toml
+              subPath: oauth2.toml
+              readOnly: true
+          {{- end }}
+      {{- if .Values.hbbs.oauth2 }}
+      volumes:
+        - name: oauth2
+          configMap:
+            name: {{ .Release.Name }}-hbbs-oauth2
+      {{- end }}
 {{- end }}

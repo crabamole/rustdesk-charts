@@ -108,8 +108,3 @@ apiserver:
   env:
     OAUTH2_CREATE_USER: "1"
 
-istio:
-  enabled: false
-  gateway: istio-system/default-gateway
-  hosts:
-    - rustdesk.example.com

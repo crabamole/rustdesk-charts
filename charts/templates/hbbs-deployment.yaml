@@ -47,8 +47,12 @@ spec:
             - "-r"
             - {{ .Values.hbbs.relayAddress | quote }}
           {{- end }}
-          {{- if .Values.hbbs.env }}
+          {{- if or .Values.hbbs.oauth2 .Values.hbbs.env }}
           env:
+            {{- if .Values.hbbs.oauth2 }}
+            - name: OAUTH2_CONFIG_FILE
+              value: /data/oauth2.toml
+            {{- end }}
             {{- range $key, $value := .Values.hbbs.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}

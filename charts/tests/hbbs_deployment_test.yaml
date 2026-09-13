@@ -239,3 +239,67 @@ tests:
       - equal:
           path: spec.template.metadata.labels.team
           value: infra
+
+  - it: sets OAUTH2_CONFIG_FILE env when oauth2 is configured
+    set:
+      hbbs.oauth2: |
+        [[provider]]
+        provider = "Dex"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OAUTH2_CONFIG_FILE
+            value: /data/oauth2.toml
+
+  - it: mounts oauth2 configmap volume when oauth2 is configured
+    set:
+      hbbs.oauth2: |
+        [[provider]]
+        provider = "Dex"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: oauth2
+            mountPath: /data/oauth2.toml
+            subPath: oauth2.toml
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: oauth2
+            configMap:
+              name: RELEASE-NAME-hbbs-oauth2
+
+  - it: omits oauth2 volume when oauth2 is not configured
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: oauth2
+          any: true
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: oauth2
+          any: true
+
+  - it: exposes api port when hbbs.apiserver is true
+    set:
+      hbbs.apiserver: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: api
+            containerPort: 21114
+            protocol: TCP
+
+  - it: omits api port when hbbs.apiserver is false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: api
+          any: true

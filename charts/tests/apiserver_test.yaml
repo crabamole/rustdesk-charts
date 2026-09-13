@@ -1,0 +1,156 @@
+suite: apiserver
+templates:
+  - templates/apiserver-deployment.yaml
+  - templates/apiserver-service.yaml
+tests:
+  - it: is not rendered when apiserver is disabled
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders deployment when apiserver is enabled
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-apiserver
+
+  - it: sets the apiserver image
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: ghcr.io/rophy/sctgdesk-api-server:dev
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: renders env vars
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+        env:
+          OAUTH2_CONFIG_FILE: /data/oauth2.toml
+          OAUTH2_CREATE_USER: "1"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OAUTH2_CONFIG_FILE
+            value: /data/oauth2.toml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OAUTH2_CREATE_USER
+            value: "1"
+
+  - it: mounts oauth2 volume when hbbs.oauth2 is set
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+      hbbs:
+        oauth2: |
+          [[provider]]
+          provider = "Dex"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: oauth2
+            mountPath: /data/oauth2.toml
+            subPath: oauth2.toml
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: oauth2
+            configMap:
+              name: RELEASE-NAME-hbbs-oauth2
+
+  - it: omits oauth2 volume when hbbs.oauth2 is not set
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - isNull:
+          path: spec.template.spec.volumes
+      - isNull:
+          path: spec.template.spec.containers[0].volumeMounts
+
+  - it: sets container security context
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - contains:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          content: "ALL"
+
+  - it: renders service when enabled
+    template: templates/apiserver-service.yaml
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.ports[0].port
+          value: 21114
+
+  - it: does not render service when disabled
+    template: templates/apiserver-service.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
