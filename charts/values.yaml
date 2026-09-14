@@ -19,6 +19,12 @@ hbbs:
   # Public relay address advertised to clients. Must be externally resolvable.
   # Leave empty to let clients discover relay automatically.
   relayAddress: ""
+  # Database URL for hbbs (DB_URL env var). Supports sqlite:// and postgres://.
+  # When empty, uses the default SQLite file in /data.
+  databaseUrl: ""
+  # Reference an existing secret for DB_URL (key: DB_URL).
+  # Takes precedence over databaseUrl when set.
+  databaseUrlSecretName: ""
   env:
     ALWAYS_USE_RELAY: "Y"
     RUST_LOG: info
@@ -94,6 +100,12 @@ apiserver:
     repository: sctgdesk-api-server
     tag: "dev"
     pullPolicy: IfNotPresent
+  # Database URL for api-server (DATABASE_URL env var). Supports sqlite:// and postgres://.
+  # When empty, uses the default SQLite file in /data.
+  databaseUrl: ""
+  # Reference an existing secret for DATABASE_URL (key: DATABASE_URL).
+  # Takes precedence over databaseUrl when set.
+  databaseUrlSecretName: ""
   resources:
     limits:
       cpu: "1"

@@ -48,8 +48,17 @@ spec:
             - "-r"
             - {{ .Values.hbbs.relayAddress | quote }}
           {{- end }}
-          {{- if or .Values.hbbs.oauth2 .Values.hbbs.env (and .Values.apiserver .Values.apiserver.enabled) }}
           env:
+            {{- if .Values.hbbs.databaseUrlSecretName }}
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.hbbs.databaseUrlSecretName }}
+                  key: DB_URL
+            {{- else if .Values.hbbs.databaseUrl }}
+            - name: DB_URL
+              value: {{ .Values.hbbs.databaseUrl | quote }}
+            {{- end }}
             {{- if .Values.hbbs.oauth2 }}
             - name: OAUTH2_CONFIG_FILE
               value: /data/oauth2.toml
@@ -62,7 +71,6 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-          {{- end }}
           {{- with .Values.hbbs.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -107,15 +115,23 @@ spec:
             - "--port"
             - {{ .Values.apiserver.port | default 21114 | quote }}
           workingDir: /data
-          {{- if .Values.apiserver.env }}
           env:
+            {{- if .Values.apiserver.databaseUrlSecretName }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.apiserver.databaseUrlSecretName }}
+                  key: DATABASE_URL
+            {{- else if .Values.apiserver.databaseUrl }}
+            - name: DATABASE_URL
+              value: {{ .Values.apiserver.databaseUrl | quote }}
+            {{- end }}
             {{- range $key, $value := .Values.apiserver.env }}
             {{- if $value }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
             {{- end }}
-          {{- end }}
           {{- with .Values.apiserver.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
