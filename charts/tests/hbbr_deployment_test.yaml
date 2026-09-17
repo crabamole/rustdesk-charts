@@ -36,7 +36,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/rophy/sctgdesk-server:dev
+          value: ghcr.io/rophy/sctgdesk-server:0.1.0
 
   - it: uses global image registry override
     set:
@@ -44,7 +44,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: registry.example.com/rophy/sctgdesk-server:dev
+          value: registry.example.com/rophy/sctgdesk-server:0.1.0
 
   - it: renders replicas from values
     set:

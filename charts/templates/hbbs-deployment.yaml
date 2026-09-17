@@ -48,28 +48,26 @@ spec:
             - "-r"
             - {{ .Values.hbbs.relayAddress | quote }}
           {{- end }}
-          env:
+          {{- $hbbsEnv := list }}
             {{- if .Values.hbbs.databaseUrlSecretName }}
-            - name: DB_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.hbbs.databaseUrlSecretName }}
-                  key: DB_URL
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "DB_URL" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.hbbs.databaseUrlSecretName "key" "DB_URL"))) }}
             {{- else if .Values.hbbs.databaseUrl }}
-            - name: DB_URL
-              value: {{ .Values.hbbs.databaseUrl | quote }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "DB_URL" "value" .Values.hbbs.databaseUrl) }}
             {{- end }}
             {{- if .Values.hbbs.oauth2 }}
-            - name: OAUTH2_CONFIG_FILE
-              value: /data/oauth2.toml
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "OAUTH2_CONFIG_FILE" "value" "/data/oauth2.toml") }}
             {{- end }}
             {{- if and .Values.apiserver .Values.apiserver.enabled }}
-            - name: API_SERVER
-              value: "http://127.0.0.1:{{ .Values.apiserver.port | default 21114 }}"
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "API_SERVER" "value" (printf "http://127.0.0.1:%v" (.Values.apiserver.port | default 21114))) }}
             {{- end }}
             {{- range $key, $value := .Values.hbbs.env }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}
+            {{- end }}
+            {{- if $hbbsEnv }}
+          env:
+            {{- range $hbbsEnv }}
+            - {{- toYaml . | nindent 14 }}
+            {{- end }}
             {{- end }}
           {{- with .Values.hbbs.resources }}
           resources:
