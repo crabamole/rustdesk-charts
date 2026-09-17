@@ -13,7 +13,7 @@ hbbs:
   image:
     registry: ghcr.io
     repository: rophy/sctgdesk-server
-    tag: "dev"
+    tag: "0.1.0"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
   # Public relay address advertised to clients. Must be externally resolvable.
@@ -52,7 +52,7 @@ hbbr:
   image:
     registry: ghcr.io
     repository: rophy/sctgdesk-server
-    tag: "dev"
+    tag: "0.1.0"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
   replicas: 1
@@ -74,7 +74,7 @@ webclient:
   image:
     registry: ghcr.io
     repository: rophy/rustdesk/web-client
-    tag: "1.4.9-dev"
+    tag: "1.4.9-20260917-1"
     pullPolicy: IfNotPresent
   replicas: 1
   podAnnotations: {}
@@ -96,9 +96,9 @@ apiserver:
   enabled: false
   port: 21114
   image:
-    registry: ""
-    repository: sctgdesk-api-server
-    tag: "dev"
+    registry: ghcr.io
+    repository: rophy/sctgdesk-api-server
+    tag: "0.1.0"
     pullPolicy: IfNotPresent
   # Database URL for api-server (DATABASE_URL env var). Supports sqlite:// and postgres://.
   # When empty, uses the default SQLite file in /data.
