@@ -12,7 +12,7 @@ spec:
       port: 21118
       targetPort: ws
       protocol: TCP
-    {{- if .Values.hbbs.apiserver }}
+    {{- if and .Values.apiserver .Values.apiserver.enabled }}
     - name: api
       port: 21114
       targetPort: api

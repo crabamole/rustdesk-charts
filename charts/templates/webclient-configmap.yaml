@@ -67,8 +67,6 @@ data:
             {{- $apiHost := "" }}
             {{- if and .Values.apiserver .Values.apiserver.enabled }}
             {{- $apiHost = printf "%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")) }}
-            {{- else if .Values.hbbs.apiserver }}
-            {{- $apiHost = printf "%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "hbbs")) }}
             {{- end }}
             {{- if $apiHost }}
             location /api/ {
