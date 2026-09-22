@@ -124,6 +124,10 @@ spec:
             - name: DATABASE_URL
               value: {{ .Values.apiserver.databaseUrl | quote }}
             {{- end }}
+            {{- if .Values.extraCACerts }}
+            - name: SSL_CERT_FILE
+              value: "/etc/ssl/certs/extra/ca-bundle.crt"
+            {{- end }}
             {{- range $key, $value := .Values.apiserver.env }}
             {{- if $value }}
             - name: {{ $key }}
@@ -155,6 +159,11 @@ spec:
               subPath: oauth2.toml
               readOnly: true
             {{- end }}
+            {{- if .Values.extraCACerts }}
+            - name: extra-ca-certs
+              mountPath: /etc/ssl/certs/extra
+              readOnly: true
+            {{- end }}
         {{- end }}
       volumes:
         - name: keypair
@@ -164,6 +173,11 @@ spec:
         - name: oauth2
           configMap:
             name: {{ .Release.Name }}-hbbs-oauth2
+        {{- end }}
+        {{- if .Values.extraCACerts }}
+        - name: extra-ca-certs
+          configMap:
+            name: {{ include "rustdesk.fullname" . }}-extra-ca-certs
         {{- end }}
         - name: data
           {{- if .Values.hbbs.persistence.enabled }}

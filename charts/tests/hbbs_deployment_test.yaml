@@ -321,6 +321,84 @@ tests:
           path: spec.template.spec.containers
           count: 1
 
+  - it: apiserver sidecar sets SSL_CERT_FILE when extraCACerts is set
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+      extraCACerts: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: SSL_CERT_FILE
+            value: "/etc/ssl/certs/extra/ca-bundle.crt"
+
+  - it: apiserver sidecar mounts extra-ca-certs volume when extraCACerts is set
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+      extraCACerts: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: extra-ca-certs
+            mountPath: /etc/ssl/certs/extra
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: extra-ca-certs
+            configMap:
+              name: RELEASE-NAME-rustdesk-extra-ca-certs
+
+  - it: omits extra-ca-certs when extraCACerts is empty
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: extra-ca-certs
+          any: true
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: extra-ca-certs
+          any: true
+
+  - it: does not set SSL_CERT_FILE when extraCACerts is empty
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[1].env
+          content:
+            name: SSL_CERT_FILE
+            value: "/etc/ssl/certs/extra/ca-bundle.crt"
+
   - it: apiserver sidecar mounts oauth2 when configured
     set:
       apiserver:

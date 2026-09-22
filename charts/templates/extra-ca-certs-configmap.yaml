@@ -1,0 +1,11 @@
+{{- if .Values.extraCACerts }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "rustdesk.fullname" . }}-extra-ca-certs
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "apiserver") | nindent 4 }}
+data:
+  ca-bundle.crt: |
+    {{- .Values.extraCACerts | nindent 4 }}
+{{- end }}

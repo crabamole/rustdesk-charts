@@ -1,0 +1,40 @@
+suite: extra CA certs
+templates:
+  - templates/extra-ca-certs-configmap.yaml
+tests:
+  - it: does not render when extraCACerts is empty
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders ConfigMap with bundled cert data
+    set:
+      extraCACerts: "-----BEGIN CERTIFICATE-----\nMIIDxTCC\n-----END CERTIFICATE-----"
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-extra-ca-certs
+      - matchRegex:
+          path: data["ca-bundle.crt"]
+          pattern: "BEGIN CERTIFICATE"
+
+  - it: renders multiple certs as single bundle
+    set:
+      extraCACerts: "-----BEGIN CERTIFICATE-----\ncert1\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\ncert2\n-----END CERTIFICATE-----"
+    asserts:
+      - matchRegex:
+          path: data["ca-bundle.crt"]
+          pattern: "cert1"
+      - matchRegex:
+          path: data["ca-bundle.crt"]
+          pattern: "cert2"
+
+  - it: applies apiserver component labels
+    set:
+      extraCACerts: "test"
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: apiserver

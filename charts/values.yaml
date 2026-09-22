@@ -92,6 +92,16 @@ webclient:
   env:
     RUSTDESK_KEY: ""
 
+# Extra CA certificates to trust (PEM bundle) for the apiserver's outbound
+# HTTPS calls (e.g. OIDC token exchange with a corporate CA).
+# Multiple certs can be concatenated.
+# Example:
+#   extraCACerts: |
+#     -----BEGIN CERTIFICATE-----
+#     ...
+#     -----END CERTIFICATE-----
+extraCACerts: ""
+
 apiserver:
   enabled: false
   port: 21114
