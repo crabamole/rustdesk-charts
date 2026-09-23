@@ -1,0 +1,20 @@
+{{- if .Values.oidcMock.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "oidc-mock") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "oidc-mock") | nindent 4 }}
+data:
+  config.yaml: |
+    port: {{ .Values.oidcMock.port }}
+    issuer: {{ .Values.oidcMock.authorizeUrl }}
+    clients:
+      - id: sctgdesk-api-server
+        secret: appsecret
+        redirect_uris:
+          - http://*/api/oidc/callback
+          - https://*/api/oidc/callback
+    users:
+      {{- toYaml .Values.oidcMock.users | nindent 6 }}
+{{- end }}

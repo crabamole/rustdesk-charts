@@ -1,12 +1,20 @@
-{{- if .Values.hbbs.oauth2 }}
+{{- if and .Values.oidcMock.enabled .Values.oidcMock.authorizeUrl (not .Values.hbbs.oauth2.existingSecret) }}
+{{- $tokenUrl := printf "http://%s:%v" (include "rustdesk.componentName" (dict "context" . "component" "oidc-mock")) .Values.oidcMock.port -}}
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: {{ .Release.Name }}-hbbs-oauth2
   labels:
-    app.kubernetes.io/name: hbbs
-    app.kubernetes.io/instance: {{ .Release.Name }}
-data:
+    {{- include "rustdesk.labels" (dict "context" . "component" "hbbs") | nindent 4 }}
+stringData:
   oauth2.toml: |
-    {{- .Values.hbbs.oauth2 | nindent 4 }}
+    [[provider]]
+    provider = "Dex"
+    authorization_url = "{{ .Values.oidcMock.authorizeUrl }}/authorize"
+    token_exchange_url = "{{ $tokenUrl }}/token"
+    app_id = "sctgdesk-api-server"
+    app_secret = "appsecret"
+    scope = "openid email profile"
+    op_auth_string = "oidc/dex"
+    op = "dex"
 {{- end }}

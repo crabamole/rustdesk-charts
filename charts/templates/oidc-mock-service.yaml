@@ -1,0 +1,17 @@
+{{- if .Values.oidcMock.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "oidc-mock") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "oidc-mock") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.oidcMock.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "oidc-mock") | nindent 4 }}
+{{- end }}

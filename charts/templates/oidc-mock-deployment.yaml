@@ -1,0 +1,62 @@
+{{- if .Values.oidcMock.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "oidc-mock") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "oidc-mock") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "rustdesk.selectorLabels" (dict "context" . "component" "oidc-mock") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rustdesk.selectorLabels" (dict "context" . "component" "oidc-mock") | nindent 8 }}
+    spec:
+      containers:
+        - name: oidc-mock
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.oidcMock.image) }}
+          imagePullPolicy: {{ .Values.oidcMock.image.pullPolicy }}
+          command: ["serve"]
+          env:
+            - name: OIDC_CONFIG_FILE
+              value: /config/config.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.oidcMock.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /.well-known/openid-configuration
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /.well-known/openid-configuration
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          {{- with .Values.oidcMock.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "rustdesk.componentName" (dict "context" . "component" "oidc-mock") }}
+{{- end }}

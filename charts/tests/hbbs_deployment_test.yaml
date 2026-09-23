@@ -81,6 +81,8 @@ tests:
   - it: omits env when empty
     set:
       hbbs.env: null
+      oidcMock:
+        enabled: false
     asserts:
       - isNull:
           path: spec.template.spec.containers[0].env
@@ -240,11 +242,10 @@ tests:
           path: spec.template.metadata.labels.team
           value: infra
 
-  - it: sets OAUTH2_CONFIG_FILE env when oauth2 is configured
+  - it: sets OAUTH2_CONFIG_FILE env when oidcMock is enabled with authorizeUrl
     set:
-      hbbs.oauth2: |
-        [[provider]]
-        provider = "Dex"
+      oidcMock:
+        authorizeUrl: "https://oidc.example.com"
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -252,11 +253,10 @@ tests:
             name: OAUTH2_CONFIG_FILE
             value: /data/oauth2.toml
 
-  - it: mounts oauth2 configmap volume when oauth2 is configured
+  - it: mounts generated oauth2 secret when oidcMock is enabled
     set:
-      hbbs.oauth2: |
-        [[provider]]
-        provider = "Dex"
+      oidcMock:
+        authorizeUrl: "https://oidc.example.com"
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -269,10 +269,28 @@ tests:
           path: spec.template.spec.volumes
           content:
             name: oauth2
-            configMap:
-              name: RELEASE-NAME-hbbs-oauth2
+            secret:
+              secretName: RELEASE-NAME-hbbs-oauth2
 
-  - it: omits oauth2 volume when oauth2 is not configured
+  - it: mounts existingSecret when provided
+    set:
+      hbbs:
+        oauth2:
+          existingSecret: my-custom-oauth2
+      oidcMock:
+        enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: oauth2
+            secret:
+              secretName: my-custom-oauth2
+
+  - it: omits oauth2 volume when oidcMock disabled and no existingSecret
+    set:
+      oidcMock:
+        enabled: false
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -431,8 +449,10 @@ tests:
             name: SSL_CERT_FILE
             value: "/etc/ssl/certs/extra/ca-bundle.crt"
 
-  - it: apiserver sidecar mounts oauth2 when configured
+  - it: apiserver sidecar mounts oauth2 when oidcMock is enabled
     set:
+      oidcMock:
+        authorizeUrl: "https://oidc.example.com"
       apiserver:
         enabled: true
         image:
@@ -440,10 +460,6 @@ tests:
           repository: rophy/sctgdesk-api-server
           tag: "dev"
           pullPolicy: IfNotPresent
-      hbbs:
-        oauth2: |
-          [[provider]]
-          provider = "Dex"
     asserts:
       - contains:
           path: spec.template.spec.containers[1].volumeMounts

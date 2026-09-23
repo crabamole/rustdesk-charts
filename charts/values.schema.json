@@ -26,6 +26,12 @@
         "command": { "type": "array", "items": { "type": "string" } },
         "relayAddress": { "type": "string" },
         "env": { "type": "object" },
+        "oauth2": {
+          "type": "object",
+          "properties": {
+            "existingSecret": { "type": "string" }
+          }
+        },
         "resources": { "$ref": "#/$defs/resources" },
         "podAnnotations": { "type": "object" },
         "podLabels": { "type": "object" },
@@ -76,6 +82,29 @@
         "nodeSelector": { "type": "object" },
         "affinity": { "type": "object" },
         "tolerations": { "type": "array" }
+      }
+    },
+    "oidcMock": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "authorizeUrl": { "type": "string" },
+        "image": { "$ref": "#/$defs/image" },
+        "port": { "type": "integer" },
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["sub", "email", "name"],
+            "properties": {
+              "sub": { "type": "string" },
+              "email": { "type": "string" },
+              "name": { "type": "string" },
+              "password": { "type": "string" }
+            }
+          }
+        },
+        "resources": { "$ref": "#/$defs/resources" }
       }
     },
     "istio": {

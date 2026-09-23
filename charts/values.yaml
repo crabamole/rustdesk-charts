@@ -28,7 +28,10 @@ hbbs:
   env:
     ALWAYS_USE_RELAY: "Y"
     RUST_LOG: info
-  oauth2: ""
+  oauth2:
+    # Reference an existing Secret containing an oauth2.toml key.
+    # When set, the chart uses this Secret as-is and skips generating one.
+    existingSecret: ""
   resources:
     limits:
       cpu: "1"
@@ -101,6 +104,34 @@ webclient:
 #     ...
 #     -----END CERTIFICATE-----
 extraCACerts: ""
+
+oidcMock:
+  enabled: true
+  # Browser-reachable base URL of the OIDC mock (used as authorization_url).
+  # Required when oidcMock is enabled.
+  # Example: "https://oidc.example.com"
+  authorizeUrl: ""
+  image:
+    registry: ghcr.io
+    repository: rophy/oidc-mock
+    tag: "dev"
+    pullPolicy: IfNotPresent
+  port: 12017
+  # Users available in the mock OIDC provider.
+  users:
+    - sub: alice
+      email: alice@example.com
+      name: Alice Chen
+    - sub: bob
+      email: bob@example.com
+      name: Bob Smith
+  resources:
+    limits:
+      cpu: 200m
+      memory: 64Mi
+    requests:
+      cpu: 10m
+      memory: 32Mi
 
 apiserver:
   enabled: false

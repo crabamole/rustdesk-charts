@@ -57,6 +57,26 @@ Component fullname: <fullname>-<component>
 {{- end -}}
 
 {{/*
+Whether OAuth2 is enabled (existingSecret provided or oidcMock enabled).
+*/}}
+{{- define "rustdesk.oauth2Enabled" -}}
+{{- if or .Values.hbbs.oauth2.existingSecret (and .Values.oidcMock.enabled .Values.oidcMock.authorizeUrl) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the Secret containing oauth2.toml.
+*/}}
+{{- define "rustdesk.oauth2SecretName" -}}
+{{- if .Values.hbbs.oauth2.existingSecret -}}
+{{- .Values.hbbs.oauth2.existingSecret -}}
+{{- else -}}
+{{- .Release.Name }}-hbbs-oauth2
+{{- end -}}
+{{- end -}}
+
+{{/*
 Image reference with global registry override.
 */}}
 {{- define "rustdesk.image" -}}
