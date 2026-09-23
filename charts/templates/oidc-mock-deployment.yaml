@@ -19,7 +19,7 @@ spec:
         - name: oidc-mock
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.oidcMock.image) }}
           imagePullPolicy: {{ .Values.oidcMock.image.pullPolicy }}
-          command: ["serve"]
+          args: ["serve"]
           env:
             - name: OIDC_CONFIG_FILE
               value: /config/config.yaml

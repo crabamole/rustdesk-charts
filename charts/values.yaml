@@ -114,7 +114,7 @@ oidcMock:
   image:
     registry: ghcr.io
     repository: rophy/oidc-mock
-    tag: "dev"
+    tag: "20260913-34fdbaf"
     pullPolicy: IfNotPresent
   port: 12017
   # Users available in the mock OIDC provider.

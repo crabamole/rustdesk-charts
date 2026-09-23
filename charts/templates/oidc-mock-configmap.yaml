@@ -13,8 +13,7 @@ data:
       - id: sctgdesk-api-server
         secret: appsecret
         redirect_uris:
-          - http://*/api/oidc/callback
-          - https://*/api/oidc/callback
+          - "*"
     users:
       {{- toYaml .Values.oidcMock.users | nindent 6 }}
 {{- end }}
