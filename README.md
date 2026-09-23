@@ -104,19 +104,59 @@ api-server (`hbbs.env.MAX_DATABASE_CONNECTIONS`, `apiserver.env.MAX_DATABASE_CON
 | `database.url` | External database connection URL (used only when `postgresql.enabled=false`) | `""` |
 | `database.existingSecret` | Existing Secret holding the full external database URL | `""` |
 | `database.existingSecretKey` | Key in `database.existingSecret` holding the URL | `url` |
-| `apiserver.port` | api-server service port | `21114` |
+| `apiserver.port` | api-server container listen port (the Service port is fixed at `21114`) | `21114` |
+
+### Uninstalling and rolling back
+
+`helm uninstall` and `helm rollback` (e.g. back to a 0.2.x release) do **not**
+delete two things that `helm install`/`helm upgrade` created:
+
+- the bundled database's PVC, `data-<fullname>-postgresql-0` (from the
+  StatefulSet's `volumeClaimTemplates`);
+- the generated password Secret, `<fullname>-postgresql`, which is
+  annotated `helm.sh/resource-policy: keep` specifically so it survives.
+
+They're kept together on purpose: the next `helm install` re-adopts the kept
+Secret and reuses the same password, so it still matches the password already
+written into the surviving PGDATA on the PVC. If only one of the two were
+kept, the reinstalled database would reject the (new or old) password and
+hbbs/api-server would crash-loop on auth failures.
+
+Consequences:
+- Setting `postgresql.auth.password` to a new value after the first install
+  does **not** change the database's password — it's only used the first time
+  the Secret is created. The bundled Postgres keeps whatever password it was
+  initialized with.
+- To fully reset the bundled database (fresh data, new generated password),
+  delete both the PVC and the Secret before the next install:
+
+```bash
+kubectl delete pvc data-<fullname>-postgresql-0 -n <namespace>
+kubectl delete secret <fullname>-postgresql -n <namespace>
+```
+
+(`<fullname>` is normally `<release>` when the release name already contains
+`rustdesk`, or `<release>-rustdesk` otherwise — see `rustdesk.fullname` in
+`templates/_helpers.tpl`, or run `helm template` and check the object names.)
 
 ### Upgrading from 0.2.x
 
 This is a breaking change. 0.2.x stored hbbs state in a SQLite database on a
 persistent volume; 0.3.0 requires PostgreSQL and removes the hbbs PVC
 (`hbbs.persistence`), `apiserver.enabled`, and the per-component
-`databaseUrl`/`databaseUrlSecretName` values. Data is **not** migrated
-automatically — back up `/data/db_v2.sqlite3` from the hbbs pod before
-upgrading if you need to keep existing peer/user records:
+`databaseUrl`/`databaseUrlSecretName` values. Setting `postgresql.persistence.size`
+after the first install has no effect — the StatefulSet's `volumeClaimTemplates`
+are immutable, so update it in your values file before the first 0.3.0 install.
+
+Data is **not** migrated automatically. hbbs runs its SQLite database in WAL
+mode, so committed transactions can sit in `db_v2.sqlite3-wal` instead of the
+main file — back up all three files from the hbbs pod (with hbbs stopped or
+quiesced) before upgrading if you need to keep existing peer/user records:
 
 ```bash
 kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3 ./db_v2.sqlite3
+kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-wal ./db_v2.sqlite3-wal
+kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-shm ./db_v2.sqlite3-shm
 ```
 
 ## Single-port architecture
