@@ -1,4 +1,3 @@
-{{- if and .Values.apiserver .Values.apiserver.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,10 +6,9 @@ metadata:
     {{- include "rustdesk.labels" (dict "context" . "component" "apiserver") | nindent 4 }}
 spec:
   selector:
-    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbs") | nindent 4 }}
+    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "apiserver") | nindent 4 }}
   ports:
     - name: http
       port: 21114
       targetPort: api
       protocol: TCP
-{{- end }}

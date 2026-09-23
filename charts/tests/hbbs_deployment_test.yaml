@@ -78,14 +78,22 @@ tests:
             name: RUST_LOG
             value: info
 
-  - it: omits env when empty
+  - it: always sets env from the database helper and API_SERVER even when hbbs.env is empty
     set:
       hbbs.env: null
       oidcMock:
         enabled: false
     asserts:
-      - isNull:
+      - contains:
           path: spec.template.spec.containers[0].env
+          content:
+            name: DB_URL
+            value: postgres://rustdesk:$(DATABASE_PASSWORD)@RELEASE-NAME-rustdesk-postgresql:5432/rustdesk
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: API_SERVER
+            value: http://RELEASE-NAME-rustdesk-apiserver:21114
 
   - it: renders default resource limits
     asserts:
@@ -142,25 +150,11 @@ tests:
             mountPath: /data/id_ed25519
             subPath: id_ed25519
             readOnly: true
-
-  - it: uses emptyDir when persistence is disabled
-    asserts:
       - contains:
           path: spec.template.spec.volumes
           content:
             name: data
             emptyDir: {}
-
-  - it: uses PVC when persistence is enabled
-    set:
-      hbbs.persistence.enabled: true
-    asserts:
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: data
-            persistentVolumeClaim:
-              claimName: RELEASE-NAME-rustdesk-hbbs-data
 
   - it: sets container security context
     asserts:
@@ -303,42 +297,6 @@ tests:
             name: oauth2
           any: true
 
-  - it: adds apiserver sidecar when apiserver is enabled
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
-        env:
-          OAUTH2_CONFIG_FILE: /data/oauth2.toml
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[1].name
-          value: apiserver
-      - equal:
-          path: spec.template.spec.containers[1].image
-          value: ghcr.io/rophy/sctgdesk-api-server:dev
-      - contains:
-          path: spec.template.spec.containers[1].ports
-          content:
-            name: api
-            containerPort: 21114
-            protocol: TCP
-      - contains:
-          path: spec.template.spec.containers[1].volumeMounts
-          content:
-            name: data
-            mountPath: /data
-
-  - it: omits apiserver sidecar when apiserver is disabled
-    asserts:
-      - lengthEqual:
-          path: spec.template.spec.containers
-          count: 1
-
   - it: hbbs container has liveness and readiness probes
     asserts:
       - equal:
@@ -348,123 +306,36 @@ tests:
           path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
           value: ws
 
-  - it: apiserver sidecar has HTTP liveness and readiness probes
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
+  - it: has exactly one container and no PVC
     asserts:
-      - equal:
-          path: spec.template.spec.containers[1].livenessProbe.httpGet.path
-          value: /api/login-options
-      - equal:
-          path: spec.template.spec.containers[1].livenessProbe.httpGet.port
-          value: api
-      - equal:
-          path: spec.template.spec.containers[1].readinessProbe.httpGet.path
-          value: /api/login-options
-      - equal:
-          path: spec.template.spec.containers[1].readinessProbe.httpGet.port
-          value: api
-
-  - it: apiserver sidecar sets SSL_CERT_FILE when extraCACerts is set
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
-      extraCACerts: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[1].env
-          content:
-            name: SSL_CERT_FILE
-            value: "/etc/ssl/certs/extra/ca-bundle.crt"
-
-  - it: apiserver sidecar mounts extra-ca-certs volume when extraCACerts is set
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
-      extraCACerts: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[1].volumeMounts
-          content:
-            name: extra-ca-certs
-            mountPath: /etc/ssl/certs/extra
-            readOnly: true
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
       - contains:
           path: spec.template.spec.volumes
           content:
-            name: extra-ca-certs
-            configMap:
-              name: RELEASE-NAME-rustdesk-extra-ca-certs
+            name: data
+            emptyDir: {}
 
-  - it: omits extra-ca-certs when extraCACerts is empty
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
-    asserts:
-      - notContains:
-          path: spec.template.spec.containers[1].volumeMounts
-          content:
-            name: extra-ca-certs
-          any: true
-      - notContains:
-          path: spec.template.spec.volumes
-          content:
-            name: extra-ca-certs
-          any: true
-
-  - it: does not set SSL_CERT_FILE when extraCACerts is empty
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
-    asserts:
-      - notContains:
-          path: spec.template.spec.containers[1].env
-          content:
-            name: SSL_CERT_FILE
-            value: "/etc/ssl/certs/extra/ca-bundle.crt"
-
-  - it: apiserver sidecar mounts oauth2 when oidcMock is enabled
-    set:
-      oidcMock:
-        authorizeUrl: "https://oidc.example.com"
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
+  - it: gets DB_URL from the shared database helper and API_SERVER from the service
     asserts:
       - contains:
-          path: spec.template.spec.containers[1].volumeMounts
+          path: spec.template.spec.containers[0].env
           content:
-            name: oauth2
-            mountPath: /data/oauth2.toml
-            subPath: oauth2.toml
-            readOnly: true
+            name: DB_URL
+            value: postgres://rustdesk:$(DATABASE_PASSWORD)@RELEASE-NAME-rustdesk-postgresql:5432/rustdesk
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: API_SERVER
+            value: http://RELEASE-NAME-rustdesk-apiserver:21114
+
+  - it: has a TCP startup probe on ws
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            tcpSocket:
+              port: ws
+            periodSeconds: 5
+            failureThreshold: 60

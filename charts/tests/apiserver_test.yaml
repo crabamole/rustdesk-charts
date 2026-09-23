@@ -1,41 +1,153 @@
 suite: apiserver
 templates:
+  - templates/apiserver-deployment.yaml
   - templates/apiserver-service.yaml
 tests:
-  - it: renders service when enabled
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
+  - it: renders its own Deployment
+    template: templates/apiserver-deployment.yaml
     asserts:
       - isKind:
-          of: Service
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-apiserver
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.strategy.type
+          value: Recreate
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: apiserver
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value: ["--address", "0.0.0.0", "--port", "21114"]
+
+  - it: gets DATABASE_URL from the shared database helper
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            value: postgres://rustdesk:$(DATABASE_PASSWORD)@RELEASE-NAME-rustdesk-postgresql:5432/rustdesk
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MAX_DATABASE_CONNECTIONS
+            value: "20"
+
+  - it: bundled mode with auth.existingSecret reads that secret for the password
+    template: templates/apiserver-deployment.yaml
+    set:
+      postgresql.auth.existingSecret: my-pg
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: my-pg
+                key: password
+
+  - it: external url mode reads the chart database secret
+    template: templates/apiserver-deployment.yaml
+    set:
+      postgresql.enabled: false
+      database.url: postgres://u:p@db:5432/rd
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-rustdesk-database
+                key: url
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_PASSWORD
+          any: true
+
+  - it: external existingSecret mode reads the given secret and key
+    template: templates/apiserver-deployment.yaml
+    set:
+      postgresql.enabled: false
+      database.existingSecret: ext-db
+      database.existingSecretKey: DATABASE_URL
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: ext-db
+                key: DATABASE_URL
+
+  - it: has an HTTP startup probe
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /api/login-options
+              port: api
+            periodSeconds: 5
+            failureThreshold: 60
+
+  - it: mounts an emptyDir at /data and no PVC
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data
+            emptyDir: {}
+
+  - it: sets SSL_CERT_FILE and mounts extra CA certs when configured
+    template: templates/apiserver-deployment.yaml
+    set:
+      extraCACerts: "-----BEGIN CERTIFICATE-----\nX\n-----END CERTIFICATE-----"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SSL_CERT_FILE
+            value: /etc/ssl/certs/extra/ca-bundle.crt
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: extra-ca-certs
+            mountPath: /etc/ssl/certs/extra
+            readOnly: true
+
+  - it: mounts oauth2.toml when oidcMock is enabled with authorizeUrl
+    template: templates/apiserver-deployment.yaml
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: oauth2
+            mountPath: /data/oauth2.toml
+            subPath: oauth2.toml
+            readOnly: true
+
+  - it: service selects the apiserver pods
+    template: templates/apiserver-service.yaml
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: apiserver
       - equal:
           path: spec.ports[0].port
           value: 21114
       - equal:
           path: spec.ports[0].targetPort
           value: api
-
-  - it: selects hbbs pods
-    set:
-      apiserver:
-        enabled: true
-        image:
-          registry: ghcr.io
-          repository: rophy/sctgdesk-api-server
-          tag: "dev"
-          pullPolicy: IfNotPresent
-    asserts:
-      - equal:
-          path: spec.selector["app.kubernetes.io/name"]
-          value: hbbs
-
-  - it: does not render service when disabled
-    asserts:
-      - hasDocuments:
-          count: 0

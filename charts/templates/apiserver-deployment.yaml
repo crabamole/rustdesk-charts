@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "apiserver") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "rustdesk.selectorLabels" (dict "context" . "component" "apiserver") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rustdesk.selectorLabels" (dict "context" . "component" "apiserver") | nindent 8 }}
+        {{- with .Values.apiserver.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.apiserver.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+      {{- with .Values.apiserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiserver.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: apiserver
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.apiserver.image) }}
+          imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
+          command: ["/app/sctgdesk-api-server"]
+          args:
+            - "--address"
+            - "0.0.0.0"
+            - "--port"
+            - {{ .Values.apiserver.port | default 21114 | quote }}
+          workingDir: /data
+          env:
+            {{- include "rustdesk.databaseEnv" (dict "context" $ "var" "DATABASE_URL") | nindent 12 }}
+            {{- if .Values.extraCACerts }}
+            - name: SSL_CERT_FILE
+              value: "/etc/ssl/certs/extra/ca-bundle.crt"
+            {{- end }}
+            {{- range $key, $value := .Values.apiserver.env }}
+            {{- if $value }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          {{- with .Values.apiserver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: api
+              containerPort: {{ .Values.apiserver.port | default 21114 }}
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /api/login-options
+              port: api
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /api/login-options
+              port: api
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/login-options
+              port: api
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if include "rustdesk.oauth2Enabled" . }}
+            - name: oauth2
+              mountPath: /data/oauth2.toml
+              subPath: oauth2.toml
+              readOnly: true
+            {{- end }}
+            {{- if .Values.extraCACerts }}
+            - name: extra-ca-certs
+              mountPath: /etc/ssl/certs/extra
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: data
+          emptyDir: {}
+        {{- if include "rustdesk.oauth2Enabled" . }}
+        - name: oauth2
+          secret:
+            secretName: {{ include "rustdesk.oauth2SecretName" . }}
+        {{- end }}
+        {{- if .Values.extraCACerts }}
+        - name: extra-ca-certs
+          configMap:
+            name: {{ include "rustdesk.fullname" . }}-extra-ca-certs
+        {{- end }}

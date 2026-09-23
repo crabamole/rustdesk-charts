@@ -64,11 +64,7 @@ data:
                 proxy_read_timeout 300s;
             }
 
-            {{- $apiHost := "" }}
-            {{- if and .Values.apiserver .Values.apiserver.enabled }}
-            {{- $apiHost = printf "%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")) }}
-            {{- end }}
-            {{- if $apiHost }}
+            {{- $apiHost := printf "%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")) }}
             location /api/ {
                 proxy_pass http://{{ $apiHost }};
                 proxy_set_header Host $host;
@@ -81,11 +77,5 @@ data:
                 proxy_set_header Host $host;
                 proxy_set_header X-Forwarded-Proto $forwarded_proto;
             }
-            {{- else }}
-            location /api/ {
-                default_type application/json;
-                return 200 '{}';
-            }
-            {{- end }}
         }
     }

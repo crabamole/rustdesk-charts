@@ -19,15 +19,10 @@ hbbs:
   # Public relay address advertised to clients. Must be externally resolvable.
   # Leave empty to let clients discover relay automatically.
   relayAddress: ""
-  # Database URL for hbbs (DB_URL env var). Supports sqlite:// and postgres://.
-  # When empty, uses the default SQLite file in /data.
-  databaseUrl: ""
-  # Reference an existing secret for DB_URL (key: DB_URL).
-  # Takes precedence over databaseUrl when set.
-  databaseUrlSecretName: ""
   env:
     ALWAYS_USE_RELAY: "Y"
     RUST_LOG: info
+    MAX_DATABASE_CONNECTIONS: "10"
   oauth2:
     # Reference an existing Secret containing an oauth2.toml key.
     # When set, the chart uses this Secret as-is and skips generating one.
@@ -44,12 +39,6 @@ hbbs:
   nodeSelector: {}
   affinity: {}
   tolerations: []
-  persistence:
-    enabled: false
-    size: 100Mi
-    storageClass: ""
-    accessModes:
-      - ReadWriteOnce
 
 hbbr:
   image:
@@ -134,19 +123,12 @@ oidcMock:
       memory: 32Mi
 
 apiserver:
-  enabled: false
   port: 21114
   image:
     registry: ghcr.io
     repository: rophy/sctgdesk-api-server
     tag: "0.1.0"
     pullPolicy: IfNotPresent
-  # Database URL for api-server (DATABASE_URL env var). Supports sqlite:// and postgres://.
-  # When empty, uses the default SQLite file in /data.
-  databaseUrl: ""
-  # Reference an existing secret for DATABASE_URL (key: DATABASE_URL).
-  # Takes precedence over databaseUrl when set.
-  databaseUrlSecretName: ""
   resources:
     limits:
       cpu: "1"
@@ -156,6 +138,12 @@ apiserver:
       memory: 64Mi
   env:
     OAUTH2_CREATE_USER: "1"
+    MAX_DATABASE_CONNECTIONS: "20"
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
 
 
 # External database. Used only when postgresql.enabled=false.

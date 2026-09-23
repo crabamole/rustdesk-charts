@@ -49,25 +49,17 @@ spec:
             - {{ .Values.hbbs.relayAddress | quote }}
           {{- end }}
           {{- $hbbsEnv := list }}
-            {{- if .Values.hbbs.databaseUrlSecretName }}
-            {{- $hbbsEnv = append $hbbsEnv (dict "name" "DB_URL" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.hbbs.databaseUrlSecretName "key" "DB_URL"))) }}
-            {{- else if .Values.hbbs.databaseUrl }}
-            {{- $hbbsEnv = append $hbbsEnv (dict "name" "DB_URL" "value" .Values.hbbs.databaseUrl) }}
-            {{- end }}
             {{- if include "rustdesk.oauth2Enabled" . }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "OAUTH2_CONFIG_FILE" "value" "/data/oauth2.toml") }}
             {{- end }}
-            {{- if and .Values.apiserver .Values.apiserver.enabled }}
-            {{- $hbbsEnv = append $hbbsEnv (dict "name" "API_SERVER" "value" (printf "http://127.0.0.1:%v" (.Values.apiserver.port | default 21114))) }}
-            {{- end }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "API_SERVER" "value" (printf "http://%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")))) }}
             {{- range $key, $value := .Values.hbbs.env }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}
             {{- end }}
-            {{- if $hbbsEnv }}
           env:
+            {{- include "rustdesk.databaseEnv" (dict "context" $ "var" "DB_URL") | nindent 12 }}
             {{- range $hbbsEnv }}
             - {{- toYaml . | nindent 14 }}
-            {{- end }}
             {{- end }}
           {{- with .Values.hbbs.resources }}
           resources:
@@ -85,6 +77,11 @@ spec:
             - name: ws
               containerPort: 21118
               protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: ws
+            periodSeconds: 5
+            failureThreshold: 60
           livenessProbe:
             tcpSocket:
               port: ws
@@ -112,81 +109,6 @@ spec:
               subPath: oauth2.toml
               readOnly: true
             {{- end }}
-        {{- if and .Values.apiserver .Values.apiserver.enabled }}
-        - name: apiserver
-          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.apiserver.image) }}
-          imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
-          command: ["/app/sctgdesk-api-server"]
-          args:
-            - "--address"
-            - "0.0.0.0"
-            - "--port"
-            - {{ .Values.apiserver.port | default 21114 | quote }}
-          workingDir: /data
-          env:
-            {{- if .Values.apiserver.databaseUrlSecretName }}
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.apiserver.databaseUrlSecretName }}
-                  key: DATABASE_URL
-            {{- else if .Values.apiserver.databaseUrl }}
-            - name: DATABASE_URL
-              value: {{ .Values.apiserver.databaseUrl | quote }}
-            {{- end }}
-            {{- if .Values.extraCACerts }}
-            - name: SSL_CERT_FILE
-              value: "/etc/ssl/certs/extra/ca-bundle.crt"
-            {{- end }}
-            {{- range $key, $value := .Values.apiserver.env }}
-            {{- if $value }}
-            - name: {{ $key }}
-              value: {{ $value | quote }}
-            {{- end }}
-            {{- end }}
-          {{- with .Values.apiserver.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
-          ports:
-            - name: api
-              containerPort: {{ .Values.apiserver.port | default 21114 }}
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /api/login-options
-              port: api
-            initialDelaySeconds: 10
-            periodSeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /api/login-options
-              port: api
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          volumeMounts:
-            - name: data
-              mountPath: /data
-            {{- if include "rustdesk.oauth2Enabled" . }}
-            - name: oauth2
-              mountPath: /data/oauth2.toml
-              subPath: oauth2.toml
-              readOnly: true
-            {{- end }}
-            {{- if .Values.extraCACerts }}
-            - name: extra-ca-certs
-              mountPath: /etc/ssl/certs/extra
-              readOnly: true
-            {{- end }}
-        {{- end }}
       volumes:
         - name: keypair
           secret:
@@ -196,15 +118,5 @@ spec:
           secret:
             secretName: {{ include "rustdesk.oauth2SecretName" . }}
         {{- end }}
-        {{- if .Values.extraCACerts }}
-        - name: extra-ca-certs
-          configMap:
-            name: {{ include "rustdesk.fullname" . }}-extra-ca-certs
-        {{- end }}
         - name: data
-          {{- if .Values.hbbs.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}-data
-          {{- else }}
           emptyDir: {}
-          {{- end }}
