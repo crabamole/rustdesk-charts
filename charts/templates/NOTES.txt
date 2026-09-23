@@ -4,6 +4,9 @@ Components:
   - hbbs (rendezvous server): {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}
   - hbbr (relay server):      {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
   - webclient:                 {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}
+  - api-server:                {{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }}
+
+Database: {{ if .Values.postgresql.enabled }}bundled PostgreSQL ({{ include "rustdesk.componentName" (dict "context" . "component" "postgresql") }}){{ else }}external (database.url / database.existingSecret){{ end }}
 
 To access the web client, expose the webclient service:
   kubectl port-forward svc/{{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }} 8080:80 -n {{ .Release.Namespace }}

@@ -9,6 +9,7 @@ Helm charts for deploying RustDesk OSS server components, using forked images th
 | hbbs | `ghcr.io/rophy/rustdesk-server` | [rophy/rustdesk-server](https://github.com/rophy/rustdesk-server) | Rendezvous server |
 | hbbr | `ghcr.io/rophy/rustdesk-server` | [rophy/rustdesk-server](https://github.com/rophy/rustdesk-server) | Relay server |
 | web-client | `ghcr.io/rophy/rustdesk/web-client` | [rophy/rustdesk](https://github.com/rophy/rustdesk) | Browser-based remote desktop client |
+| api-server | `ghcr.io/rophy/sctgdesk-api-server` | [rophy/sctgdesk-api-server](https://github.com/rophy/sctgdesk-api-server) | REST/OIDC API server, owns the database schema |
 
 ## Why forked images?
 
@@ -58,6 +59,64 @@ hbbs:
 webclient:
   env:
     RUSTDESK_KEY: "your-public-key-here"
+```
+
+## Database
+
+hbbs and the api-server run as separate pods sharing one PostgreSQL database. The
+api-server creates and migrates the schema on startup; hbbs waits for it to be
+ready before serving.
+
+**Default (evaluation, small installs):** bundled single-instance PostgreSQL
+(`postgresql.enabled=true`), no HA or backups.
+
+**Production:** disable the bundled database and point at your own:
+
+```yaml
+postgresql:
+  enabled: false
+
+database:
+  url: "postgres://user:pass@host:5432/db?sslmode=require"
+  # or, to source the URL from an existing Secret instead:
+  # existingSecret: my-database-secret
+  # existingSecretKey: url
+```
+
+The bundled PostgreSQL's password is generated on first install and kept on
+upgrade using `lookup`, which requires a live cluster. When rendering offline
+(`helm template`, Argo CD, etc.), set `postgresql.auth.password` (must be
+URL-safe — it's embedded in the connection URL) or
+`postgresql.auth.existingSecret` instead of relying on generation.
+
+The api-server always runs a single replica, because OIDC sessions are kept in
+memory. `MAX_DATABASE_CONNECTIONS` defaults to `10` for hbbs and `20` for the
+api-server (`hbbs.env.MAX_DATABASE_CONNECTIONS`, `apiserver.env.MAX_DATABASE_CONNECTIONS`).
+
+| Value | Description | Default |
+|-------|-------------|---------|
+| `postgresql.enabled` | Deploy the bundled single-instance PostgreSQL | `true` |
+| `postgresql.auth.username` | Bundled database username | `rustdesk` |
+| `postgresql.auth.database` | Bundled database name | `rustdesk` |
+| `postgresql.auth.password` | Bundled database password (generated if empty; needs a live cluster) | `""` |
+| `postgresql.auth.existingSecret` | Existing Secret (key `password`) for the bundled database, skips generation | `""` |
+| `postgresql.persistence.size` | PVC size for the bundled database | `8Gi` |
+| `database.url` | External database connection URL (used only when `postgresql.enabled=false`) | `""` |
+| `database.existingSecret` | Existing Secret holding the full external database URL | `""` |
+| `database.existingSecretKey` | Key in `database.existingSecret` holding the URL | `url` |
+| `apiserver.port` | api-server service port | `21114` |
+
+### Upgrading from 0.2.x
+
+This is a breaking change. 0.2.x stored hbbs state in a SQLite database on a
+persistent volume; 0.3.0 requires PostgreSQL and removes the hbbs PVC
+(`hbbs.persistence`), `apiserver.enabled`, and the per-component
+`databaseUrl`/`databaseUrlSecretName` values. Data is **not** migrated
+automatically — back up `/data/db_v2.sqlite3` from the hbbs pod before
+upgrading if you need to keep existing peer/user records:
+
+```bash
+kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3 ./db_v2.sqlite3
 ```
 
 ## Single-port architecture
