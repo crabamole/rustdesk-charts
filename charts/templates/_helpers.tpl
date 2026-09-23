@@ -102,6 +102,25 @@ Fail on invalid database settings.
 {{- end -}}
 
 {{/*
+Fail on 0.2.x values removed in 0.3.0, so a stale values file cannot silently
+render with defaults (e.g. the bundled Postgres claim, whose size can't be
+changed once the StatefulSet exists). Checked with hasKey so `false`/"" still
+counts as set.
+*/}}
+{{- define "rustdesk.validateRemovedValues" -}}
+{{- $removed := list "hbbs.persistence" "hbbs.databaseUrl" "hbbs.databaseUrlSecretName" "apiserver.enabled" "apiserver.databaseUrl" "apiserver.databaseUrlSecretName" -}}
+{{- range $removed }}
+{{- $parts := splitList "." . -}}
+{{- $parent := index $parts 0 -}}
+{{- $key := index $parts 1 -}}
+{{- $parentValue := index $.Values $parent -}}
+{{- if and $parentValue (hasKey $parentValue $key) -}}
+{{- fail (printf "%s was removed in 0.3.0; see README.md 'Upgrading from 0.2.x'" .) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Name of the Secret holding the bundled Postgres password.
 */}}
 {{- define "rustdesk.postgresql.secretName" -}}

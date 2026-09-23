@@ -154,3 +154,27 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: "database.url/database.existingSecret must not be set when postgresql.enabled=true"
+
+  - it: fails when a removed 0.2.x apiserver.enabled value is set
+    template: templates/database-secret.yaml
+    set:
+      apiserver.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: "apiserver.enabled was removed in 0.3.0; see README.md 'Upgrading from 0.2.x'"
+
+  - it: fails when a removed 0.2.x hbbs.persistence value is set
+    template: templates/database-secret.yaml
+    set:
+      hbbs.persistence.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "hbbs.persistence was removed in 0.3.0; see README.md 'Upgrading from 0.2.x'"
+
+  - it: fails when a removed 0.2.x databaseUrl value is set
+    template: templates/database-secret.yaml
+    set:
+      apiserver.databaseUrl: postgres://u:p@db:5432/rd
+    asserts:
+      - failedTemplate:
+          errorMessage: "apiserver.databaseUrl was removed in 0.3.0; see README.md 'Upgrading from 0.2.x'"
