@@ -70,6 +70,13 @@ tests:
           path: data.password
           pattern: ^[A-Za-z0-9+/=]{44}$
 
+  - it: annotates the password secret to survive uninstall/rollback
+    template: templates/postgresql-secret.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+
   - it: uses the configured password
     template: templates/postgresql-secret.yaml
     set:
