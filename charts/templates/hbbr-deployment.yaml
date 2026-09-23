@@ -61,3 +61,13 @@ spec:
             - name: ws
               containerPort: 21119
               protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: ws
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: ws
+            initialDelaySeconds: 3
+            periodSeconds: 10

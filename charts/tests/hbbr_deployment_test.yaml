@@ -147,6 +147,15 @@ tests:
       - isNull:
           path: spec.template.metadata.annotations
 
+  - it: has liveness and readiness probes
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: ws
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: ws
+
   - it: renders pod labels
     set:
       hbbr.podLabels:

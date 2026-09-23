@@ -321,6 +321,38 @@ tests:
           path: spec.template.spec.containers
           count: 1
 
+  - it: hbbs container has liveness and readiness probes
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: ws
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: ws
+
+  - it: apiserver sidecar has HTTP liveness and readiness probes
+    set:
+      apiserver:
+        enabled: true
+        image:
+          registry: ghcr.io
+          repository: rophy/sctgdesk-api-server
+          tag: "dev"
+          pullPolicy: IfNotPresent
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].livenessProbe.httpGet.path
+          value: /api/login-options
+      - equal:
+          path: spec.template.spec.containers[1].livenessProbe.httpGet.port
+          value: api
+      - equal:
+          path: spec.template.spec.containers[1].readinessProbe.httpGet.path
+          value: /api/login-options
+      - equal:
+          path: spec.template.spec.containers[1].readinessProbe.httpGet.port
+          value: api
+
   - it: apiserver sidecar sets SSL_CERT_FILE when extraCACerts is set
     set:
       apiserver:

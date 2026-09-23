@@ -85,6 +85,16 @@ spec:
             - name: ws
               containerPort: 21118
               protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: ws
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: ws
+            initialDelaySeconds: 3
+            periodSeconds: 10
           volumeMounts:
             - name: data
               mountPath: /data
@@ -150,6 +160,18 @@ spec:
             - name: api
               containerPort: {{ .Values.apiserver.port | default 21114 }}
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/login-options
+              port: api
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/login-options
+              port: api
+            initialDelaySeconds: 5
+            periodSeconds: 10
           volumeMounts:
             - name: data
               mountPath: /data

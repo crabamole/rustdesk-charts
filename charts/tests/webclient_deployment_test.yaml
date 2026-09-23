@@ -177,6 +177,22 @@ tests:
       - isNotNull:
           path: spec.template.metadata.annotations["checksum/nginx-config"]
 
+  - it: has HTTP liveness and readiness probes
+    template: templates/webclient-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: http
+
   - it: renders pod labels
     template: templates/webclient-deployment.yaml
     set:
