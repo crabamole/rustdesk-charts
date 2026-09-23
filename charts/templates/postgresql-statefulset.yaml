@@ -1,0 +1,78 @@
+{{- if .Values.postgresql.enabled }}
+{{- $pg := .Values.postgresql }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "postgresql") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "postgresql") | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "rustdesk.componentName" (dict "context" . "component" "postgresql") }}
+  selector:
+    matchLabels:
+      {{- include "rustdesk.selectorLabels" (dict "context" . "component" "postgresql") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rustdesk.selectorLabels" (dict "context" . "component" "postgresql") | nindent 8 }}
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+        - name: postgresql
+          image: {{ include "rustdesk.image" (dict "global" .Values.global "image" $pg.image) }}
+          imagePullPolicy: {{ $pg.image.pullPolicy }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ $pg.auth.username | quote }}
+            - name: POSTGRES_DB
+              value: {{ $pg.auth.database | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "rustdesk.postgresql.secretName" . }}
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ $pg.auth.username | quote }}, "-d", {{ $pg.auth.database | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ $pg.auth.username | quote }}, "-d", {{ $pg.auth.database | quote }}]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          {{- with $pg.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: {{ $pg.persistence.accessModes | toJson }}
+        {{- if $pg.persistence.storageClass }}
+        storageClassName: {{ $pg.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $pg.persistence.size }}
+{{- end }}

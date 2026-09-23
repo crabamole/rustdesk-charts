@@ -1,0 +1,149 @@
+suite: postgresql
+templates:
+  - templates/postgresql-statefulset.yaml
+  - templates/postgresql-service.yaml
+  - templates/postgresql-secret.yaml
+  - templates/database-secret.yaml
+tests:
+  - it: renders a single-instance StatefulSet by default
+    template: templates/postgresql-statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-postgresql
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/library/postgres:17
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 999
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-rustdesk-postgresql
+                key: password
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 8Gi
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command
+          value: ["pg_isready", "-U", "rustdesk", "-d", "rustdesk"]
+
+  - it: sets storage class on the claim template when given
+    template: templates/postgresql-statefulset.yaml
+    set:
+      postgresql.persistence.storageClass: fast
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: fast
+
+  - it: renders a ClusterIP service on 5432
+    template: templates/postgresql-service.yaml
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 5432
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: postgresql
+
+  - it: generates a 32-character password when none is set
+    template: templates/postgresql-secret.yaml
+    asserts:
+      - isKind:
+          of: Secret
+      - matchRegex:
+          path: data.password
+          pattern: ^[A-Za-z0-9+/=]{44}$
+
+  - it: uses the configured password
+    template: templates/postgresql-secret.yaml
+    set:
+      postgresql.auth.password: s3cret
+    asserts:
+      - equal:
+          path: data.password
+          value: czNjcmV0
+
+  - it: skips the password secret when existingSecret is set
+    template: templates/postgresql-secret.yaml
+    set:
+      postgresql.auth.existingSecret: my-pg
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: uses existingSecret for POSTGRES_PASSWORD
+    template: templates/postgresql-statefulset.yaml
+    set:
+      postgresql.auth.existingSecret: my-pg
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: my-pg
+                key: password
+
+  - it: renders no postgres objects when disabled
+    set:
+      postgresql.enabled: false
+      database.url: postgres://u:p@db:5432/rd
+    templates:
+      - templates/postgresql-statefulset.yaml
+      - templates/postgresql-service.yaml
+      - templates/postgresql-secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: stores database.url in the database secret when external
+    template: templates/database-secret.yaml
+    set:
+      postgresql.enabled: false
+      database.url: postgres://u:p@db:5432/rd
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-database
+      - equal:
+          path: stringData.url
+          value: postgres://u:p@db:5432/rd
+
+  - it: renders no database secret when bundled or existingSecret
+    template: templates/database-secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: fails when external mode has no url
+    template: templates/database-secret.yaml
+    set:
+      postgresql.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "postgresql.enabled=false requires database.url or database.existingSecret"
+
+  - it: fails when bundled and external are both set
+    template: templates/database-secret.yaml
+    set:
+      database.url: postgres://u:p@db:5432/rd
+    asserts:
+      - failedTemplate:
+          errorMessage: "database.url/database.existingSecret must not be set when postgresql.enabled=true"

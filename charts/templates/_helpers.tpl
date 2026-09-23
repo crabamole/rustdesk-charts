@@ -87,3 +87,56 @@ Image reference with global registry override.
 {{ .image.repository }}:{{ .image.tag }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Fail on invalid database settings.
+*/}}
+{{- define "rustdesk.validateDatabase" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- if or .Values.database.url .Values.database.existingSecret -}}
+{{- fail "database.url/database.existingSecret must not be set when postgresql.enabled=true" -}}
+{{- end -}}
+{{- else if not (or .Values.database.url .Values.database.existingSecret) -}}
+{{- fail "postgresql.enabled=false requires database.url or database.existingSecret" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the Secret holding the bundled Postgres password.
+*/}}
+{{- define "rustdesk.postgresql.secretName" -}}
+{{- .Values.postgresql.auth.existingSecret | default (include "rustdesk.componentName" (dict "context" . "component" "postgresql")) -}}
+{{- end -}}
+
+{{/*
+Database env vars for an app container. Usage:
+  env:
+    {{- include "rustdesk.databaseEnv" (dict "context" $ "var" "DB_URL") | nindent 12 }}
+Both apps call this, so they always point at the same database.
+*/}}
+{{- define "rustdesk.databaseEnv" -}}
+{{- $ctx := .context -}}
+{{- include "rustdesk.validateDatabase" $ctx -}}
+{{- if $ctx.Values.postgresql.enabled -}}
+{{- $host := include "rustdesk.componentName" (dict "context" $ctx "component" "postgresql") -}}
+- name: DATABASE_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "rustdesk.postgresql.secretName" $ctx }}
+      key: password
+- name: {{ .var }}
+  value: {{ printf "postgres://%s:$(DATABASE_PASSWORD)@%s:5432/%s" $ctx.Values.postgresql.auth.username $host $ctx.Values.postgresql.auth.database | quote }}
+{{- else if $ctx.Values.database.existingSecret -}}
+- name: {{ .var }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ $ctx.Values.database.existingSecret }}
+      key: {{ $ctx.Values.database.existingSecretKey }}
+{{- else -}}
+- name: {{ .var }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "rustdesk.componentName" (dict "context" $ctx "component" "database") }}
+      key: url
+{{- end -}}
+{{- end -}}

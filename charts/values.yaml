@@ -157,3 +157,41 @@ apiserver:
   env:
     OAUTH2_CREATE_USER: "1"
 
+
+# External database. Used only when postgresql.enabled=false.
+database:
+  # postgres://user:pass@host:5432/db?sslmode=require
+  url: ""
+  # Existing Secret holding the full URL (takes precedence over url).
+  existingSecret: ""
+  existingSecretKey: url
+
+# Bundled single-instance PostgreSQL (convenience default; no HA or backups).
+postgresql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: library/postgres
+    tag: "17"
+    pullPolicy: IfNotPresent
+  auth:
+    username: rustdesk
+    database: rustdesk
+    # Empty: generated on first install and kept on upgrade (needs a live
+    # cluster; set this or existingSecret when rendering offline, e.g. Argo CD).
+    # Must be URL-safe (it is embedded in the connection URL).
+    password: ""
+    # Existing Secret with key "password"; the chart then creates no password Secret.
+    existingSecret: ""
+  persistence:
+    size: 8Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+  resources:
+    limits:
+      cpu: "1"
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
