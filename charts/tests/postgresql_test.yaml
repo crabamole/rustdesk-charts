@@ -40,7 +40,7 @@ tests:
           value: 8Gi
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.exec.command
-          value: ["pg_isready", "-U", "rustdesk", "-d", "rustdesk"]
+          value: ["pg_isready", "-h", "127.0.0.1", "-U", "rustdesk", "-d", "rustdesk"]
 
   - it: sets storage class on the claim template when given
     template: templates/postgresql-statefulset.yaml

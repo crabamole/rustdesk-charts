@@ -43,12 +43,12 @@ spec:
               protocol: TCP
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", {{ $pg.auth.username | quote }}, "-d", {{ $pg.auth.database | quote }}]
+              command: ["pg_isready", "-h", "127.0.0.1", "-U", {{ $pg.auth.username | quote }}, "-d", {{ $pg.auth.database | quote }}]
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", {{ $pg.auth.username | quote }}, "-d", {{ $pg.auth.database | quote }}]
+              command: ["pg_isready", "-h", "127.0.0.1", "-U", {{ $pg.auth.username | quote }}, "-d", {{ $pg.auth.database | quote }}]
             initialDelaySeconds: 30
             periodSeconds: 15
           {{- with $pg.resources }}
