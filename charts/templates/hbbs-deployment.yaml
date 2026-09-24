@@ -48,7 +48,8 @@ spec:
             - "-r"
             - {{ .Values.hbbs.relayAddress | quote }}
           {{- end }}
-          {{- $hbbsEnv := list }}
+          {{- /* runs as uid 1000, which has no home; HOME=/ is read-only */}}
+          {{- $hbbsEnv := list (dict "name" "HOME" "value" "/data") }}
             {{- if include "rustdesk.oauth2Enabled" . }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "OAUTH2_CONFIG_FILE" "value" "/data/oauth2.toml") }}
             {{- end }}

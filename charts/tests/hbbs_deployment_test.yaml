@@ -78,6 +78,14 @@ tests:
             name: RUST_LOG
             value: info
 
+  - it: sets HOME to the writable data dir (uid 1000 has no home; HOME=/ is read-only)
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HOME
+            value: /data
+
   - it: always sets env from the database helper and API_SERVER even when hbbs.env is empty
     set:
       hbbs.env: null
