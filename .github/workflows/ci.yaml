@@ -56,7 +56,7 @@ jobs:
 
       - name: Push to OCI registry
         if: github.event_name == 'push' && steps.check.outputs.exists == 'false'
-        run: helm push rustdesk-${{ steps.chart.outputs.version }}.tgz oci://ghcr.io/rophy/charts
+        run: helm push rustdesk-${{ steps.chart.outputs.version }}.tgz oci://ghcr.io/crabamole/charts
 
       - name: Create git tag
         if: github.event_name == 'push' && steps.check.outputs.exists == 'false'

@@ -41,7 +41,7 @@ spec:
         - name: apiserver
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.apiserver.image) }}
           imagePullPolicy: {{ .Values.apiserver.image.pullPolicy }}
-          command: ["/app/sctgdesk-api-server"]
+          command: ["/app/rustdesk-api"]
           args:
             - "--address"
             - "0.0.0.0"

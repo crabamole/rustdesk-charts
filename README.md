@@ -6,17 +6,17 @@ Helm charts for deploying RustDesk OSS server components, using forked images th
 
 | Component | Container Image | Source Repo | Description |
 |-----------|----------------|-------------|-------------|
-| hbbs | `ghcr.io/rophy/rustdesk-server` | [rophy/rustdesk-server](https://github.com/rophy/rustdesk-server) | Rendezvous server |
-| hbbr | `ghcr.io/rophy/rustdesk-server` | [rophy/rustdesk-server](https://github.com/rophy/rustdesk-server) | Relay server |
-| web-client | `ghcr.io/rophy/rustdesk/web-client` | [rophy/rustdesk](https://github.com/rophy/rustdesk) | Browser-based remote desktop client |
-| api-server | `ghcr.io/rophy/sctgdesk-api-server` | [rophy/sctgdesk-api-server](https://github.com/rophy/sctgdesk-api-server) | REST/OIDC API server, owns the database schema |
+| hbbs | `ghcr.io/crabamole/rustdesk-server` | [crabamole/rustdesk-server](https://github.com/crabamole/rustdesk-server) | Rendezvous server |
+| hbbr | `ghcr.io/crabamole/rustdesk-server` | [crabamole/rustdesk-server](https://github.com/crabamole/rustdesk-server) | Relay server |
+| web-client | `ghcr.io/crabamole/rustdesk/web-client` | [crabamole/rustdesk](https://github.com/crabamole/rustdesk) | Browser-based remote desktop client |
+| api-server | `ghcr.io/crabamole/rustdesk-api` | [crabamole/rustdesk-api](https://github.com/crabamole/rustdesk-api) | REST/OIDC API server, owns the database schema |
 
 ## Why forked images?
 
 The RustDesk web client and WebSocket-based peer registration were [removed from the upstream OSS builds](https://github.com/rustdesk/rustdesk) and are now only available in RustDesk Server Pro. The forked repos restore these features for the OSS server:
 
-- [rophy/rustdesk](https://github.com/rophy/rustdesk) — restores the web client with OSS server compatibility patches
-- [rophy/rustdesk-server](https://github.com/rophy/rustdesk-server) — enables WebSocket peer registration for web client connectivity
+- [crabamole/rustdesk](https://github.com/crabamole/rustdesk) — restores the web client with OSS server compatibility patches
+- [crabamole/rustdesk-server](https://github.com/crabamole/rustdesk-server) — enables WebSocket peer registration for web client connectivity
 
 ## Prerequisites
 
@@ -26,8 +26,8 @@ The chart requires a Kubernetes secret containing the hbbs keypair.
 
 ```bash
 # Generate keypair
-output=$(docker run --rm --entrypoint /usr/bin/rustdesk-utils \
-  ghcr.io/rophy/rustdesk-server:1.1.17-20260824-1 genkeypair)
+output=$(docker run --rm --entrypoint /usr/local/bin/rustdesk-utils \
+  ghcr.io/crabamole/rustdesk-server:0.2.0 genkeypair)
 public_key=$(echo "$output" | grep 'Public Key:' | awk '{print $3}')
 secret_key=$(echo "$output" | grep 'Secret Key:' | awk '{print $3}')
 

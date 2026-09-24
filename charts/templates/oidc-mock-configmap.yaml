@@ -10,7 +10,7 @@ data:
     port: {{ .Values.oidcMock.port }}
     issuer: {{ .Values.oidcMock.authorizeUrl }}
     clients:
-      - id: sctgdesk-api-server
+      - id: rustdesk-api
         secret: appsecret
         redirect_uris:
           - "*"

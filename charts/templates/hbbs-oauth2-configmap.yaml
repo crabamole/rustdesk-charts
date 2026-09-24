@@ -12,7 +12,7 @@ stringData:
     provider = "Dex"
     authorization_url = "{{ .Values.oidcMock.authorizeUrl }}/authorize"
     token_exchange_url = "{{ $tokenUrl }}/token"
-    app_id = "sctgdesk-api-server"
+    app_id = "rustdesk-api"
     app_secret = "appsecret"
     scope = "openid email profile"
     op_auth_string = "oidc/dex"

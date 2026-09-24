@@ -12,8 +12,8 @@ keypair:
 hbbs:
   image:
     registry: ghcr.io
-    repository: rophy/sctgdesk-server
-    tag: "0.1.0"
+    repository: crabamole/rustdesk-server
+    tag: "0.2.0"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
   # Public relay address advertised to clients. Must be externally resolvable.
@@ -43,8 +43,8 @@ hbbs:
 hbbr:
   image:
     registry: ghcr.io
-    repository: rophy/sctgdesk-server
-    tag: "0.1.0"
+    repository: crabamole/rustdesk-server
+    tag: "0.2.0"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
   replicas: 1
@@ -65,8 +65,8 @@ hbbr:
 webclient:
   image:
     registry: ghcr.io
-    repository: rophy/rustdesk/web-client
-    tag: "1.4.9-20260917-1"
+    repository: crabamole/rustdesk/web-client
+    tag: "1.4.9-20260925-1"
     pullPolicy: IfNotPresent
   replicas: 1
   podAnnotations: {}
@@ -126,8 +126,8 @@ apiserver:
   port: 21114
   image:
     registry: ghcr.io
-    repository: rophy/sctgdesk-api-server
-    tag: "0.1.0"
+    repository: crabamole/rustdesk-api
+    tag: "0.2.0"
     pullPolicy: IfNotPresent
   resources:
     limits:
