@@ -27,7 +27,7 @@ The chart requires a Kubernetes secret containing the hbbs keypair.
 ```bash
 # Generate keypair
 output=$(docker run --rm --entrypoint /usr/local/bin/rustdesk-utils \
-  ghcr.io/crabamole/rustdesk-server:0.2.0 genkeypair)
+  ghcr.io/crabamole/rustdesk-server:1.1.16-1 genkeypair)
 public_key=$(echo "$output" | grep 'Public Key:' | awk '{print $3}')
 secret_key=$(echo "$output" | grep 'Secret Key:' | awk '{print $3}')
 

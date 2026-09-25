@@ -13,7 +13,7 @@ hbbs:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-server
-    tag: "0.2.0"
+    tag: "1.1.16-1"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
   # Public relay address advertised to clients. Must be externally resolvable.
@@ -44,7 +44,7 @@ hbbr:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-server
-    tag: "0.2.0"
+    tag: "1.1.16-1"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
   replicas: 1
