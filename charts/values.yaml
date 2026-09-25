@@ -127,7 +127,7 @@ apiserver:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-api
-    tag: "0.2.0"
+    tag: "2.0.0"
     pullPolicy: IfNotPresent
   resources:
     limits:
