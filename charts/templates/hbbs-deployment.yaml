@@ -54,9 +54,6 @@ spec:
           {{- end }}
           {{- /* runs as uid 1000, which has no home; HOME=/ is read-only */}}
           {{- $hbbsEnv := list (dict "name" "HOME" "value" "/data") }}
-            {{- if include "rustdesk.oauth2Enabled" . }}
-            {{- $hbbsEnv = append $hbbsEnv (dict "name" "OAUTH2_CONFIG_FILE" "value" "/data/oauth2.toml") }}
-            {{- end }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "API_SERVER" "value" (printf "http://%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")))) }}
             {{- range $key, $value := .Values.hbbs.env }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}
@@ -109,20 +106,9 @@ spec:
               mountPath: /data/id_ed25519.pub
               subPath: {{ .Values.keypair.publicKeyKey }}
               readOnly: true
-            {{- if include "rustdesk.oauth2Enabled" . }}
-            - name: oauth2
-              mountPath: /data/oauth2.toml
-              subPath: oauth2.toml
-              readOnly: true
-            {{- end }}
       volumes:
         - name: keypair
           secret:
             secretName: {{ .Values.keypair.secretName }}
-        {{- if include "rustdesk.oauth2Enabled" . }}
-        - name: oauth2
-          secret:
-            secretName: {{ include "rustdesk.oauth2SecretName" . }}
-        {{- end }}
         - name: data
           emptyDir: {}

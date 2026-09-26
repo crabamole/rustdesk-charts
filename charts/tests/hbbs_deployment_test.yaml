@@ -265,45 +265,17 @@ tests:
           path: spec.template.metadata.labels.team
           value: infra
 
-  - it: sets OAUTH2_CONFIG_FILE env when oidcMock is enabled with authorizeUrl
+  - it: gets no OIDC provider config (only the api-server reads it)
     set:
-      oidcMock:
-        authorizeUrl: "https://oidc.example.com"
+      oidcMock.enabled: false
+      hbbs.oauth2.existingSecret: my-custom-oauth2
     asserts:
-      - contains:
+      - notContains:
           path: spec.template.spec.containers[0].env
           content:
             name: OAUTH2_CONFIG_FILE
             value: /data/oauth2.toml
-
-  - it: mounts generated oauth2 secret when oidcMock is enabled
-    set:
-      oidcMock:
-        authorizeUrl: "https://oidc.example.com"
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: oauth2
-            mountPath: /data/oauth2.toml
-            subPath: oauth2.toml
-            readOnly: true
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: oauth2
-            secret:
-              secretName: RELEASE-NAME-hbbs-oauth2
-
-  - it: mounts existingSecret when provided
-    set:
-      hbbs:
-        oauth2:
-          existingSecret: my-custom-oauth2
-      oidcMock:
-        enabled: false
-    asserts:
-      - contains:
+      - notContains:
           path: spec.template.spec.volumes
           content:
             name: oauth2

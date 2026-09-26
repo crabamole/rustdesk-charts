@@ -154,3 +154,23 @@ tests:
       - equal:
           path: spec.ports[0].targetPort
           value: api
+
+  - it: mounts the corporate IdP Secret when hbbs.oauth2.existingSecret is set
+    template: templates/apiserver-deployment.yaml
+    set:
+      oidcMock.enabled: false
+      hbbs.oauth2.existingSecret: corp-oidc
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: oauth2
+            mountPath: /data/oauth2.toml
+            subPath: oauth2.toml
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: oauth2
+            secret:
+              secretName: corp-oidc
