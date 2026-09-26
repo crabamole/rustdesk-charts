@@ -1,4 +1,6 @@
 suite: services
+set:
+  oidcMock.authorizeUrl: https://oidc.example.com
 tests:
   - it: renders hbbs service with correct ports
     templates:

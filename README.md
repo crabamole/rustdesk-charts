@@ -59,6 +59,51 @@ hbbs:
 webclient:
   env:
     RUSTDESK_KEY: "your-public-key-here"
+
+# Quickstart only: the bundled OIDC mock, reachable by browsers at this URL.
+# For production, disable it and use your IdP (see "OIDC provider").
+oidcMock:
+  authorizeUrl: "https://oidc.example.com"
+```
+
+## OIDC provider
+
+Login is OIDC-only. For production, disable the mock and give the api-server your
+IdP in an `oauth2.toml` stored in a Secret (key `oauth2.toml`):
+
+```toml
+[[provider]]
+provider = "Oauth2"          # generic OIDC: Azure AD, Okta, Keycloak, Google, ...
+authorization_url = "https://login.example.com/oauth2/v2.0/authorize"
+token_exchange_url = "https://login.example.com/oauth2/v2.0/token"
+app_id = "<client id>"
+app_secret = "<client secret>"
+scope = "openid email profile"
+op = "corp"                  # identifier the client sends back
+op_auth_string = "oidc/corp" # must be "oidc/<op>"
+```
+
+- `provider`: `Oauth2` (sends the client secret both as HTTP Basic and in the
+  form body), `Dex` (HTTP Basic only) or `Github`. Other names in the code
+  (`Azure`, `Okta`, ...) are not implemented and are rejected; use `Oauth2`.
+- `scope` must include `openid`: users are identified by the ID token's `sub`.
+  `name` (else `preferred_username`) and `email` are only shown, never used to
+  match accounts.
+- Register `https://<your host>/api/oidc/callback` as the redirect URI.
+- If the IdP's certificate comes from a private CA, add it with `extraCACerts`.
+
+```bash
+kubectl create secret generic corp-oidc -n rustdesk --from-file=oauth2.toml
+helm upgrade --install rustdesk ./charts -n rustdesk -f values-override.yaml \
+  --set oidcMock.enabled=false --set hbbs.oauth2.existingSecret=corp-oidc
+```
+
+The chart refuses to install without an OIDC configuration, and the api-server
+refuses to start if the file is invalid. To check the file and that the IdP's
+token endpoint is reachable (DNS, network, TLS) from the pod:
+
+```bash
+kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api oidc check --file /data/oauth2.toml
 ```
 
 ## Login and admins

@@ -159,3 +159,12 @@ Both apps call this, so they always point at the same database.
       key: url
 {{- end -}}
 {{- end -}}
+
+{{/*
+Login is OIDC-only and the api-server refuses to start without a provider file.
+*/}}
+{{- define "rustdesk.validateOidc" -}}
+{{- if not (include "rustdesk.oauth2Enabled" .) -}}
+{{- fail "login is OIDC-only: set hbbs.oauth2.existingSecret (your IdP; see README 'OIDC provider') or oidcMock.authorizeUrl (quickstart mock)" -}}
+{{- end -}}
+{{- end -}}

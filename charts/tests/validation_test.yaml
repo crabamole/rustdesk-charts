@@ -1,0 +1,28 @@
+suite: validation
+templates:
+  - templates/database-secret.yaml
+tests:
+  - it: fails without any OIDC configuration (login is OIDC-only)
+    asserts:
+      - failedTemplate:
+          errorPattern: "login is OIDC-only"
+
+  - it: accepts the quickstart mock with an authorize URL
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: accepts a corporate IdP Secret with the mock disabled
+    set:
+      oidcMock.enabled: false
+      hbbs.oauth2.existingSecret: corp-oidc
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: fails with the mock disabled and no Secret
+    set:
+      oidcMock.enabled: false
+    asserts:
+      - failedTemplate:
+          errorPattern: "login is OIDC-only"
