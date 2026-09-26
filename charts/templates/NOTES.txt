@@ -15,3 +15,6 @@ To access the web client, expose the webclient service:
 Service ports:
   hbbs: 21118 (WebSocket)
   hbbr: 21119 (WebSocket)
+
+Login is OIDC-only; password login is disabled. The first user to log in
+through OIDC becomes the admin, so log in yourself before sharing the URL.

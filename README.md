@@ -61,6 +61,18 @@ webclient:
     RUSTDESK_KEY: "your-public-key-here"
 ```
 
+## Login and the first admin
+
+Login is OIDC-only: the api-server rejects every password login (`POST /api/login`
+always returns 401) and stores no usable passwords. The first user to log in through
+OIDC becomes the admin, so log in yourself right after installing, before sharing
+the URL. Upgrading an existing install removes the old built-in `admin` account
+(its password was public); the next OIDC login becomes the admin and takes over
+its shared address books.
+
+Upstream native clients still show username/password fields; logins through them
+always fail. Use "Continue with ..." instead.
+
 ## Database
 
 hbbs and the api-server run as separate pods sharing one PostgreSQL database. The
