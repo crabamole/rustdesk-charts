@@ -6,11 +6,11 @@ metadata:
     {{- include "rustdesk.labels" (dict "context" . "component" "webclient") | nindent 4 }}
 data:
   nginx.conf: |
-    user  nginx;
+    # Runs as the unprivileged nginx user: port 8080, writable files under /tmp.
     worker_processes  1;
 
     error_log  /var/log/nginx/error.log notice;
-    pid        /run/nginx.pid;
+    pid        /tmp/nginx.pid;
 
     events {
         worker_connections  1024;
@@ -26,6 +26,12 @@ data:
 
         access_log  /var/log/nginx/access.log  main;
 
+        client_body_temp_path /tmp/client_temp;
+        proxy_temp_path       /tmp/proxy_temp;
+        fastcgi_temp_path     /tmp/fastcgi_temp;
+        uwsgi_temp_path       /tmp/uwsgi_temp;
+        scgi_temp_path        /tmp/scgi_temp;
+
         sendfile        on;
         keepalive_timeout  65;
 
@@ -40,7 +46,7 @@ data:
         }
 
         server {
-            listen 80 default_server;
+            listen 8080 default_server;
 
             location / {
                 root /usr/share/nginx/html;

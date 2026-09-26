@@ -40,18 +40,23 @@ spec:
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.hbbr.image) }}
           imagePullPolicy: {{ .Values.hbbr.image.pullPolicy }}
           command: {{ .Values.hbbr.command | toJson }}
-          {{- if .Values.hbbr.env }}
+          workingDir: /data
           env:
+            {{- /* runs as uid 1000, which has no home; HOME=/ is read-only */}}
+            - name: HOME
+              value: /data
             {{- range $key, $value := .Values.hbbr.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-          {{- end }}
           {{- with .Values.hbbr.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
@@ -71,3 +76,9 @@ spec:
               port: ws
             initialDelaySeconds: 3
             periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

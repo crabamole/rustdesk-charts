@@ -54,10 +54,22 @@ tests:
           path: spec.replicas
           value: 3
 
-  - it: omits env when empty
+  - it: runs as a non-root user with a writable /data home
     asserts:
-      - isNull:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].workingDir
+          value: /data
+      - contains:
           path: spec.template.spec.containers[0].env
+          content:
+            name: HOME
+            value: /data
 
   - it: renders env when set
     set:

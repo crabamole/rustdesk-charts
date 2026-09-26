@@ -99,7 +99,7 @@ tests:
           path: spec.template.spec.containers[0].ports
           content:
             name: http
-            containerPort: 80
+            containerPort: 8080
             protocol: TCP
 
   - it: sets container security context
@@ -109,8 +109,15 @@ tests:
           path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
           value: false
       - equal:
-          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
-          value: false
+          path: spec.template.spec.containers[0].securityContext.capabilities
+          value:
+            drop: ["ALL"]
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 101
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
       - equal:
           path: spec.template.spec.containers[0].securityContext.seccompProfile.type
           value: RuntimeDefault
