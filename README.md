@@ -22,7 +22,7 @@ The RustDesk web client and WebSocket-based peer registration were [removed from
 
 ### Generate keypair
 
-The chart requires a Kubernetes secret containing the hbbs keypair. hbbs signs with it and the web client reads the public key from it, so there is no key to copy into values.
+The chart requires a Kubernetes secret containing the hbbs keypair. hbbs signs with it and the web client reads the public key from it, so there is no key to copy into values. When installing against a cluster, the chart checks that the Secret exists, has both keys, and that the public key belongs to the private key. Back the Secret up: every client trusts this key, and losing it means re-keying them all.
 
 ```bash
 # Generate keypair

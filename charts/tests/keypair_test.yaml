@@ -1,0 +1,76 @@
+suite: keypair validation
+# Fake key bytes: the check compares lengths and whether the private key ends with the public key.
+templates:
+  - templates/database-secret.yaml
+set:
+  oidcMock.authorizeUrl: https://oidc.example.com
+  hbbs.relayAddress: rustdesk.example.com:443
+release:
+  namespace: rustdesk
+tests:
+  - it: skips the check when rendering offline (nothing to look up)
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: fails when the namespace exists but the Secret does not
+    kubernetesProvider:
+      scheme:
+        "v1/ServiceAccount":
+          gvr: { version: "v1", resource: "serviceaccounts" }
+          namespaced: true
+      objects:
+        - kind: ServiceAccount
+          apiVersion: v1
+          metadata: { name: default, namespace: rustdesk }
+    asserts:
+      - failedTemplate:
+          errorPattern: "keypair Secret rustdesk-keypair not found in namespace rustdesk"
+
+  - it: accepts a matching keypair
+    kubernetesProvider:
+      scheme:
+        "v1/Secret":
+          gvr: { version: "v1", resource: "secrets" }
+          namespaced: true
+      objects:
+        - kind: Secret
+          apiVersion: v1
+          metadata: { name: rustdesk-keypair, namespace: rustdesk }
+          data:
+            id_ed25519: VTFOVFUxTlRVMU5UVTFOVFUxTlRVMU5UVTFOVFUxTlRVMU5UVTFOVFUxTlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUE9PQ==
+            id_ed25519.pub: VUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQT0=
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: rejects a public key that does not belong to the private key
+    kubernetesProvider:
+      scheme:
+        "v1/Secret":
+          gvr: { version: "v1", resource: "secrets" }
+          namespaced: true
+      objects:
+        - kind: Secret
+          apiVersion: v1
+          metadata: { name: rustdesk-keypair, namespace: rustdesk }
+          data:
+            id_ed25519: VTFOVFUxTlRVMU5UVTFOVFUxTlRVMU5UVTFOVFUxTlRVMU5UVTFOVFUxTlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUE9PQ==
+            id_ed25519.pub: VVZGUlVWRlJVVkZSVVZGUlVWRlJVVkZSVVZGUlVWRlJVVkZSVVZGUlVWRT0=
+    asserts:
+      - failedTemplate:
+          errorPattern: "does not belong to the private key"
+
+  - it: rejects a Secret without the public key
+    kubernetesProvider:
+      scheme:
+        "v1/Secret":
+          gvr: { version: "v1", resource: "secrets" }
+          namespaced: true
+      objects:
+        - kind: Secret
+          apiVersion: v1
+          metadata: { name: rustdesk-keypair, namespace: rustdesk }
+          data:
+            id_ed25519: VTFOVFUxTlRVMU5UVTFOVFUxTlRVMU5UVTFOVFUxTlRVMU5UVTFOVFUxTlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUZCUVVGQlFVRkJRVUE9PQ==
+    asserts:
+      - failedTemplate:
+          errorPattern: 'has no key "id_ed25519.pub"'

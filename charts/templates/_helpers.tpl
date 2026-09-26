@@ -183,3 +183,31 @@ Settings the web client and hbbs cannot work without.
 {{- fail "webclient.env.RUSTDESK_KEY is no longer used: the web client reads the public key from the keypair Secret; remove it" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Checks the keypair Secret when installing against a cluster (`lookup` is empty
+when rendering offline). The namespace's default ServiceAccount tells an absent
+Secret apart from offline rendering without cluster-wide permissions.
+*/}}
+{{- define "rustdesk.validateKeypair" -}}
+{{- $name := .Values.keypair.secretName -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace $name -}}
+{{- if $secret -}}
+{{- $data := $secret.data | default dict -}}
+{{- range list .Values.keypair.privateKeyKey .Values.keypair.publicKeyKey -}}
+{{- if not (hasKey $data .) -}}
+{{- fail (printf "keypair Secret %s has no key %q (see README 'Generate keypair')" $name .) -}}
+{{- end -}}
+{{- end -}}
+{{- $pub := index $data .Values.keypair.publicKeyKey | b64dec | trim | b64dec -}}
+{{- $priv := index $data .Values.keypair.privateKeyKey | b64dec | trim | b64dec -}}
+{{- if or (ne (len $pub) 32) (ne (len $priv) 64) -}}
+{{- fail (printf "keypair Secret %s: expected base64 ed25519 keys (32-byte public, 64-byte private); generate them with rustdesk-utils genkeypair" $name) -}}
+{{- end -}}
+{{- if ne (substr 32 64 $priv) $pub -}}
+{{- fail (printf "keypair Secret %s: the public key does not belong to the private key" $name) -}}
+{{- end -}}
+{{- else if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
+{{- fail (printf "keypair Secret %s not found in namespace %s; create it first (see README 'Generate keypair')" $name .Release.Namespace) -}}
+{{- end -}}
+{{- end -}}
