@@ -17,4 +17,5 @@ stringData:
     scope = "openid email profile"
     op_auth_string = "oidc/dex"
     op = "dex"
+    issuer = "{{ .Values.oidcMock.authorizeUrl }}"
 {{- end }}

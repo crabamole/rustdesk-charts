@@ -132,6 +132,7 @@ app_secret = "<client secret>"
 scope = "openid email profile"
 op = "corp"                  # identifier the client sends back
 op_auth_string = "oidc/corp" # must be "oidc/<op>"
+issuer = "https://login.example.com/<tenant>/v2.0"  # the IdP's issuer URL
 ```
 
 - `provider`: `Oauth2` (sends the client secret both as HTTP Basic and in the
@@ -140,6 +141,10 @@ op_auth_string = "oidc/corp" # must be "oidc/<op>"
 - `scope` must include `openid`: users are identified by the ID token's `sub`.
   `name` (else `preferred_username`) and `email` are only shown, never used to
   match accounts.
+- `issuer` is required (except for `Github`): it must equal the `iss` claim of the
+  IdP's ID tokens, i.e. the `issuer` in its `/.well-known/openid-configuration`.
+  ID tokens with another issuer, another audience than `app_id`, or an expired
+  `exp` are rejected.
 - Register `https://<your host>/api/oidc/callback` as the redirect URI.
 - If the IdP's certificate comes from a private CA, add it with `extraCACerts`.
 
