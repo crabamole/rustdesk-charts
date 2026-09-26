@@ -191,7 +191,7 @@ ready before serving.
 **Default (evaluation, small installs):** bundled single-instance PostgreSQL
 (`postgresql.enabled=true`), no HA or backups.
 
-**Production:** disable the bundled database and point at your own:
+**Production:** use an external managed PostgreSQL (backups and HA are its job) and disable the bundled one:
 
 ```yaml
 postgresql:
