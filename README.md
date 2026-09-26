@@ -284,6 +284,25 @@ kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-wal ./db_v2.sqlite3-wal
 kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-shm ./db_v2.sqlite3-shm
 ```
 
+## Upgrading to 0.5.0
+
+0.5.0 ships rustdesk-api 3.0.0 and web client 1.4.9-20260927-1. Breaking changes:
+
+- **Login is OIDC-only.** Password login and the seeded `admin` user are gone (a
+  database migration deletes it). Set `hbbs.oauth2.existingSecret` (your IdP) or
+  `oidcMock.authorizeUrl`; see [OIDC provider](#oidc-provider). Admins are promoted
+  with the `rustdesk-api admin` CLI; see [Login and admins](#login-and-admins).
+- **Provider files need `issuer`** (except `Github`); ID tokens with another issuer,
+  audience or an expired `exp` are rejected.
+- **Users are identified by the OIDC `sub`.** Existing accounts are taken over by the
+  first login whose email matches exactly one account without a `sub`.
+- **Logins finished in another browser than they started in need confirmation.**
+  Native clients show an Approve/Deny page after the IdP login.
+- `hbbs.relayAddress` is required; `hbbr.replicas` and `webclient.env.RUSTDESK_KEY`
+  are rejected (the web client reads the key from the keypair Secret, which is now
+  checked at install time).
+- `LOGGED_IN_ONLY` defaults to `Y`; NetworkPolicies are on by default.
+
 ## Single-port architecture
 
 For deployments behind a TLS-terminating reverse proxy (e.g., Istio, nginx), all traffic can go through a single domain on port 443:
