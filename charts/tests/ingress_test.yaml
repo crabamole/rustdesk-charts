@@ -1,0 +1,61 @@
+suite: ingress
+templates:
+  - templates/ingress.yaml
+tests:
+  - it: is not rendered by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: routes the host to the web client service
+    set:
+      ingress.enabled: true
+      ingress.host: rustdesk.example.com
+    asserts:
+      - isKind:
+          of: Ingress
+      - equal:
+          path: spec.rules[0].host
+          value: rustdesk.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0]
+          value:
+            path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: RELEASE-NAME-rustdesk-webclient
+                port:
+                  name: http
+      - notExists:
+          path: spec.tls
+      - notExists:
+          path: spec.ingressClassName
+
+  - it: sets class, annotations and TLS
+    set:
+      ingress.enabled: true
+      ingress.host: rustdesk.example.com
+      ingress.className: nginx
+      ingress.annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+      ingress.tls.secretName: rustdesk-tls
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+      - equal:
+          path: metadata.annotations["cert-manager.io/cluster-issuer"]
+          value: letsencrypt
+      - equal:
+          path: spec.tls[0]
+          value:
+            hosts: [rustdesk.example.com]
+            secretName: rustdesk-tls
+
+  - it: requires a host
+    set:
+      ingress.enabled: true
+    asserts:
+      - failedTemplate:
+          errorMessage: ingress.host is required when ingress.enabled is true

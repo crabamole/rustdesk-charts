@@ -85,6 +85,18 @@ webclient:
   # RUSTDESK_KEY comes from the keypair Secret; add other env vars here.
   env: {}
 
+# Optional Ingress for the whole service (one host to the web client, which
+# routes /ws/id, /ws/relay, /api and /ui itself). Remote sessions are long-lived
+# WebSockets: raise the controller's idle timeouts (see README).
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tls:
+    # Secret with the certificate; empty means no TLS section (TLS terminated elsewhere).
+    secretName: ""
+
 # Extra CA certificates to trust (PEM bundle) for the apiserver's outbound
 # HTTPS calls (e.g. OIDC token exchange with a corporate CA).
 # Multiple certs can be concatenated.

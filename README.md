@@ -61,6 +61,33 @@ oidcMock:
   authorizeUrl: "https://oidc.example.com"
 ```
 
+## Exposing it
+
+Everything goes through the web client Service (port 80): it serves the web app and
+routes `/ws/id`, `/ws/relay`, `/api` and `/ui` itself. So exposing the chart takes a
+single rule sending your host to that Service; set `hbbs.relayAddress` to
+`<host>:443`. The chart can create an Ingress for you, for example with
+ingress-nginx and cert-manager:
+
+```yaml
+ingress:
+  enabled: true
+  className: nginx
+  host: rustdesk.example.com
+  tls:
+    secretName: rustdesk-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    # Remote sessions are long-lived WebSockets; the default 60 s idle timeout drops them.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+```
+
+With other routing (an Istio VirtualService, a Gateway API HTTPRoute, ...), route
+the host to the `<release>-rustdesk-webclient` Service on port 80 the same way,
+keep the `Host` header (the api-server builds its OIDC callback URL from it) and
+allow long-lived WebSockets.
+
 ## OIDC provider
 
 Login is OIDC-only. For production, disable the mock and give the api-server your
