@@ -88,6 +88,21 @@ the host to the `<release>-rustdesk-webclient` Service on port 80 the same way,
 keep the `Host` header (the api-server builds its OIDC callback URL from it) and
 allow long-lived WebSockets.
 
+## Single instance
+
+hbbs, hbbr and the api-server each run one pod. Postgres holds the durable data,
+but each also keeps live state in memory that a second pod would not see:
+
+- hbbs: the open connection of every registered device; a request landing on
+  another pod could find the device in Postgres but not reach it.
+- hbbr: the two halves of each relayed session must meet in the same pod.
+- api-server: OIDC login sessions (a login spans several requests) and a
+  write-back address book cache.
+
+Upgrades roll over without a gap (`RollingUpdate`, surge 1). For a few seconds
+both pods run: a connection attempt or an OIDC login in flight may need a retry.
+Running more replicas is a goal but needs changes in the servers first.
+
 ## OIDC provider
 
 Login is OIDC-only. For production, disable the mock and give the api-server your
@@ -181,8 +196,7 @@ upgrade using `lookup`, which requires a live cluster. When rendering offline
 URL-safe — it's embedded in the connection URL) or
 `postgresql.auth.existingSecret` instead of relying on generation.
 
-The api-server always runs a single replica, because OIDC sessions are kept in
-memory. `MAX_DATABASE_CONNECTIONS` defaults to `10` for hbbs and `20` for the
+`MAX_DATABASE_CONNECTIONS` defaults to `10` for hbbs and `20` for the
 api-server (`hbbs.env.MAX_DATABASE_CONNECTIONS`, `apiserver.env.MAX_DATABASE_CONNECTIONS`).
 
 | Value | Description | Default |

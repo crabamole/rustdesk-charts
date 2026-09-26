@@ -44,3 +44,11 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "RUSTDESK_KEY is no longer used"
+
+  - it: rejects hbbr.replicas
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      hbbr.replicas: 2
+    asserts:
+      - failedTemplate:
+          errorPattern: "hbbr.replicas was removed"

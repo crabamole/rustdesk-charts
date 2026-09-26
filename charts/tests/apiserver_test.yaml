@@ -16,7 +16,10 @@ tests:
           value: 1
       - equal:
           path: spec.strategy.type
-          value: Recreate
+          value: RollingUpdate
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
       - equal:
           path: spec.template.spec.containers[0].name
           value: apiserver

@@ -48,7 +48,6 @@ hbbr:
     tag: "1.1.16-1"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
-  replicas: 1
   podAnnotations: {}
   podLabels: {}
   nodeSelector: {}

@@ -6,8 +6,12 @@ metadata:
     {{- include "rustdesk.labels" (dict "context" . "component" "hbbs") | nindent 4 }}
 spec:
   replicas: 1
+  # Single instance (in-memory state, see README); roll over without a gap.
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbs") | nindent 6 }}

@@ -46,13 +46,18 @@ tests:
           path: spec.template.spec.containers[0].image
           value: registry.example.com/crabamole/rustdesk-server:1.1.16-1
 
-  - it: renders replicas from values
-    set:
-      hbbr.replicas: 3
+  - it: runs a single instance and rolls over without a gap
     asserts:
       - equal:
           path: spec.replicas
-          value: 3
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+            rollingUpdate:
+              maxSurge: 1
+              maxUnavailable: 0
 
   - it: runs as a non-root user with a writable /data home
     asserts:

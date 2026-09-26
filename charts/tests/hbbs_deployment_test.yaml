@@ -11,7 +11,10 @@ tests:
           value: RELEASE-NAME-rustdesk-hbbs
       - equal:
           path: spec.strategy.type
-          value: Recreate
+          value: RollingUpdate
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
       - equal:
           path: spec.template.spec.securityContext.fsGroup
           value: 1000
