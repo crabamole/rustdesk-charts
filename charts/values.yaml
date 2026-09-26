@@ -21,6 +21,8 @@ hbbs:
   relayAddress: ""
   env:
     ALWAYS_USE_RELAY: "Y"
+    # Only logged-in (OIDC) users may start connections; the api-server validates their session.
+    LOGGED_IN_ONLY: "Y"
     RUST_LOG: info
     MAX_DATABASE_CONNECTIONS: "10"
   oauth2:

@@ -122,6 +122,12 @@ The user name is the OIDC `name` claim. Upgrading an existing install removes
 the old built-in `admin` account (its password was public); the first user you
 promote takes over its shared address books.
 
+Starting a connection also requires being logged in: hbbs runs with
+`LOGGED_IN_ONLY=Y` by default and checks the client's session with the api-server,
+so a client that never logs in cannot connect to anyone. (Devices registering to be
+controlled do not need to log in.) Set `hbbs.env.LOGGED_IN_ONLY: "N"` to allow
+anonymous connections.
+
 Upstream native clients still show username/password fields; logins through them
 always fail. Use "Continue with ..." instead.
 

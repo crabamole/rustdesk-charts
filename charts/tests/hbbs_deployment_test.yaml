@@ -16,6 +16,24 @@ tests:
           path: spec.template.spec.securityContext.fsGroup
           value: 1000
 
+  - it: requires login to start connections by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOGGED_IN_ONLY
+            value: "Y"
+
+  - it: allows turning login-only off
+    set:
+      hbbs.env.LOGGED_IN_ONLY: "N"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: LOGGED_IN_ONLY
+            value: "N"
+
   - it: renders standard labels
     asserts:
       - isNotNull:
