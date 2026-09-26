@@ -1,6 +1,7 @@
 suite: services
 set:
   oidcMock.authorizeUrl: https://oidc.example.com
+  hbbs.relayAddress: rustdesk.example.com:443
 tests:
   - it: renders hbbs service with correct ports
     templates:

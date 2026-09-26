@@ -57,24 +57,27 @@ tests:
     set:
       webclient.env:
         RUSTDESK_HOST: rustdesk.example.com
-        RUSTDESK_KEY: abc123
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: RUSTDESK_HOST
             value: rustdesk.example.com
+
+  - it: reads RUSTDESK_KEY from the keypair Secret
+    template: templates/webclient-deployment.yaml
+    set:
+      keypair.secretName: my-keys
+      keypair.publicKeyKey: pub
+    asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: RUSTDESK_KEY
-            value: abc123
-
-  - it: omits env when all values are empty
-    template: templates/webclient-deployment.yaml
-    asserts:
-      - isNull:
-          path: spec.template.spec.containers[0].env
+            valueFrom:
+              secretKeyRef:
+                name: my-keys
+                key: pub
 
   - it: renders default resource limits
     template: templates/webclient-deployment.yaml

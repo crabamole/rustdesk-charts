@@ -16,8 +16,7 @@ hbbs:
     tag: "1.1.16-1"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
-  # Public relay address advertised to clients. Must be externally resolvable.
-  # Leave empty to let clients discover relay automatically.
+  # Required: public host:port clients reach hbbr through (e.g. rustdesk.example.com:443).
   relayAddress: ""
   env:
     ALWAYS_USE_RELAY: "Y"
@@ -83,8 +82,8 @@ webclient:
     requests:
       cpu: 10m
       memory: 32Mi
-  env:
-    RUSTDESK_KEY: ""
+  # RUSTDESK_KEY comes from the keypair Secret; add other env vars here.
+  env: {}
 
 # Extra CA certificates to trust (PEM bundle) for the apiserver's outbound
 # HTTPS calls (e.g. OIDC token exchange with a corporate CA).

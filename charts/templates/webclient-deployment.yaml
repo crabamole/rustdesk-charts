@@ -48,17 +48,19 @@ spec:
         - name: webclient
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.webclient.image) }}
           imagePullPolicy: {{ .Values.webclient.image.pullPolicy }}
-          {{- $hasEnv := false }}
-          {{- range $value := .Values.webclient.env }}{{ if $value }}{{ $hasEnv = true }}{{ end }}{{ end }}
-          {{- if $hasEnv }}
           env:
+            # The public key hbbs serves, so clients and server can't disagree.
+            - name: RUSTDESK_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.keypair.secretName }}
+                  key: {{ .Values.keypair.publicKeyKey }}
             {{- range $key, $value := .Values.webclient.env }}
-            {{- if $value }}
+            {{- if and $value (ne $key "RUSTDESK_KEY") }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
             {{- end }}
-          {{- end }}
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/nginx.conf

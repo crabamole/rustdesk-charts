@@ -168,3 +168,15 @@ Login is OIDC-only and the api-server refuses to start without a provider file.
 {{- fail "login is OIDC-only: set hbbs.oauth2.existingSecret (your IdP; see README 'OIDC provider') or oidcMock.authorizeUrl (quickstart mock)" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Settings the web client and hbbs cannot work without.
+*/}}
+{{- define "rustdesk.validateClientSettings" -}}
+{{- if not .Values.hbbs.relayAddress -}}
+{{- fail "hbbs.relayAddress is required: the public host:port clients reach hbbr through (e.g. rustdesk.example.com:443)" -}}
+{{- end -}}
+{{- if .Values.webclient.env.RUSTDESK_KEY -}}
+{{- fail "webclient.env.RUSTDESK_KEY is no longer used: the web client reads the public key from the keypair Secret; remove it" -}}
+{{- end -}}
+{{- end -}}

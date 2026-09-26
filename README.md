@@ -22,7 +22,7 @@ The RustDesk web client and WebSocket-based peer registration were [removed from
 
 ### Generate keypair
 
-The chart requires a Kubernetes secret containing the hbbs keypair.
+The chart requires a Kubernetes secret containing the hbbs keypair. hbbs signs with it and the web client reads the public key from it, so there is no key to copy into values.
 
 ```bash
 # Generate keypair
@@ -52,13 +52,8 @@ Create a `values-override.yaml` with your deployment-specific settings:
 
 ```yaml
 hbbs:
-  # Public relay address advertised to clients (must be externally resolvable).
-  # Required for single-port deployments behind a reverse proxy.
+  # Required: public host:port clients reach hbbr through.
   relayAddress: "rustdesk.example.com:443"
-
-webclient:
-  env:
-    RUSTDESK_KEY: "your-public-key-here"
 
 # Quickstart only: the bundled OIDC mock, reachable by browsers at this URL.
 # For production, disable it and use your IdP (see "OIDC provider").
