@@ -103,6 +103,20 @@ Upgrades roll over without a gap (`RollingUpdate`, surge 1). For a few seconds
 both pods run: a connection attempt or an OIDC login in flight may need a retry.
 Running more replicas is a goal but needs changes in the servers first.
 
+## Network policies and service account
+
+By default the chart adds ingress-only NetworkPolicies: Postgres accepts only hbbs
+and the api-server; the api-server only the web client and hbbs; hbbs and hbbr only
+the web client. The web client (and the OIDC mock) accept any source, so your
+ingress controller or gateway needs no extra rules. Egress is not restricted.
+Disable with `networkPolicy.enabled: false`; they need a CNI that enforces
+NetworkPolicy (Calico, Cilium, ...).
+
+All pods run under one ServiceAccount with no API token mounted (none of them
+talks to the Kubernetes API). Set `serviceAccount.create: false` and
+`serviceAccount.name` to use an existing one. There is no PodDisruptionBudget: with
+a single replica each, a PDB would block node drains.
+
 ## OIDC provider
 
 Login is OIDC-only. For production, disable the mock and give the api-server your

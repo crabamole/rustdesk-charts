@@ -15,6 +15,9 @@ spec:
       labels:
         {{- include "rustdesk.selectorLabels" (dict "context" . "component" "oidc-mock") | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
+      # No pod needs the Kubernetes API.
+      automountServiceAccountToken: false
       containers:
         - name: oidc-mock
           image: {{ include "rustdesk.image" (dict "global" .Values.global "image" .Values.oidcMock.image) }}

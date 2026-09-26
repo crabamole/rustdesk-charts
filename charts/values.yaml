@@ -84,6 +84,18 @@ webclient:
   # RUSTDESK_KEY comes from the keypair Secret; add other env vars here.
   env: {}
 
+# Ingress-only NetworkPolicies: each component accepts traffic only from the
+# components that call it; the web client (and the OIDC mock) accept any source.
+networkPolicy:
+  enabled: true
+
+# Service account for all pods. None of them needs the Kubernetes API, so its
+# token is not mounted.
+serviceAccount:
+  create: true
+  # Name to use; defaults to the release's full name.
+  name: ""
+
 # Optional Ingress for the whole service (one host to the web client, which
 # routes /ws/id, /ws/relay, /api and /ui itself). Remote sessions are long-lived
 # WebSockets: raise the controller's idle timeouts (see README).

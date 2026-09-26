@@ -22,6 +22,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
+      # No pod needs the Kubernetes API.
+      automountServiceAccountToken: false
       {{- with .Values.webclient.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

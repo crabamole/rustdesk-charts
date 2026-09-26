@@ -211,3 +211,43 @@ Secret apart from offline rendering without cluster-wide permissions.
 {{- fail (printf "keypair Secret %s not found in namespace %s; create it first (see README 'Generate keypair')" $name .Release.Namespace) -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Ingress-only NetworkPolicy for .component, accepting .port from .from (component
+names) or, without .from, from anywhere.
+*/}}
+{{- define "rustdesk.networkPolicy" -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" .context "component" .component) }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" .context "component" .component) | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "rustdesk.selectorLabels" (dict "context" .context "component" .component) | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - ports:
+        - port: {{ .port }}
+      {{- if .from }}
+      from:
+        {{- range .from }}
+        - podSelector:
+            matchLabels:
+              {{- include "rustdesk.selectorLabels" (dict "context" $.context "component" .) | nindent 14 }}
+        {{- end }}
+      {{- end }}
+{{- end -}}
+
+{{/*
+Service account used by every pod.
+*/}}
+{{- define "rustdesk.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+{{- default (include "rustdesk.fullname" .) .Values.serviceAccount.name -}}
+{{- else -}}
+{{- default "default" .Values.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}

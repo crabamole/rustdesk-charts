@@ -1,0 +1,77 @@
+suite: network policies
+templates:
+  - templates/networkpolicy.yaml
+set:
+  oidcMock.authorizeUrl: https://oidc.example.com
+tests:
+  - it: renders one ingress-only policy per component
+    asserts:
+      - hasDocuments:
+          count: 6
+      - equal:
+          path: spec.policyTypes
+          value: [Ingress]
+
+  - it: leaves the web client open to any source (ingress controller or gateway)
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-rustdesk-webclient
+    asserts:
+      - equal:
+          path: spec.ingress
+          value:
+            - ports:
+                - port: http
+
+  - it: lets only hbbs and the api-server reach Postgres
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-rustdesk-postgresql
+    asserts:
+      - contains:
+          path: spec.ingress[0].from
+          content:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: hbbs
+                app.kubernetes.io/instance: RELEASE-NAME
+      - lengthEqual:
+          path: spec.ingress[0].from
+          count: 2
+      - contains:
+          path: spec.ingress[0].from
+          content:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: apiserver
+                app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: lets the web client and hbbs reach the api-server
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-rustdesk-apiserver
+    asserts:
+      - lengthEqual:
+          path: spec.ingress[0].from
+          count: 2
+      - equal:
+          path: spec.ingress[0].ports
+          value:
+            - port: api
+
+  - it: omits Postgres and mock policies when those are not deployed
+    set:
+      postgresql.enabled: false
+      database.url: postgres://u:p@db:5432/rustdesk
+      oidcMock.enabled: false
+      hbbs.oauth2.existingSecret: corp-oidc
+    asserts:
+      - hasDocuments:
+          count: 4
+
+  - it: can be disabled
+    set:
+      networkPolicy.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
