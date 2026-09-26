@@ -22,7 +22,7 @@ tests:
           value: apiserver
       - equal:
           path: spec.template.spec.containers[0].args
-          value: ["--address", "0.0.0.0", "--port", "21114"]
+          value: ["serve", "--address", "0.0.0.0", "--port", "21114"]
 
   - it: gets DATABASE_URL from the shared database helper
     template: templates/apiserver-deployment.yaml

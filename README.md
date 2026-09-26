@@ -61,14 +61,21 @@ webclient:
     RUSTDESK_KEY: "your-public-key-here"
 ```
 
-## Login and the first admin
+## Login and admins
 
-Login is OIDC-only: the api-server rejects every password login (`POST /api/login`
-always returns 401) and stores no usable passwords. The first user to log in through
-OIDC becomes the admin, so log in yourself right after installing, before sharing
-the URL. Upgrading an existing install removes the old built-in `admin` account
-(its password was public); the next OIDC login becomes the admin and takes over
-its shared address books.
+Login is OIDC-only: the api-server stores no passwords and `POST /api/login`
+always returns 401. Nobody is admin until an operator promotes them with the
+api-server's CLI, which works directly on the database:
+
+```bash
+# the user must have logged in through OIDC once (that creates the account)
+kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin promote "Alice Chen"
+kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin demote "Alice Chen"
+```
+
+The user name is the OIDC `name` claim. Upgrading an existing install removes
+the old built-in `admin` account (its password was public); the first user you
+promote takes over its shared address books.
 
 Upstream native clients still show username/password fields; logins through them
 always fail. Use "Continue with ..." instead.
