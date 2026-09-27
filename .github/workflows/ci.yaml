@@ -14,7 +14,7 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -36,14 +36,19 @@ jobs:
           version=$(grep '^version:' charts/Chart.yaml | awk '{print $2}')
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Check if tag exists
+      - name: Check if already published
         if: github.event_name == 'push'
         id: check
         run: |
-          if git rev-parse "v${{ steps.chart.outputs.version }}" >/dev/null 2>&1; then
+          # A published chart version is never overwritten; bump Chart.yaml to release.
+          # Publish only on a definite "not found"; any other lookup error fails the job.
+          if out=$(helm show chart oci://ghcr.io/crabamole/charts/rustdesk --version "${{ steps.chart.outputs.version }}" 2>&1); then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
+          elif grep -q ': not found' <<<"$out"; then
             echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$out" >&2
+            exit 1
           fi
 
       - name: Login to GHCR
@@ -61,5 +66,5 @@ jobs:
       - name: Create git tag
         if: github.event_name == 'push' && steps.check.outputs.exists == 'false'
         run: |
-          git tag "v${{ steps.chart.outputs.version }}"
-          git push origin "v${{ steps.chart.outputs.version }}"
+          git tag "${{ steps.chart.outputs.version }}"
+          git push origin "${{ steps.chart.outputs.version }}"
