@@ -184,7 +184,7 @@ postgresql:
   image:
     registry: docker.io
     repository: library/postgres
-    tag: "17"
+    tag: "17.11-trixie"
     pullPolicy: IfNotPresent
   auth:
     username: rustdesk
