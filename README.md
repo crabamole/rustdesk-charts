@@ -61,6 +61,20 @@ oidcMock:
   authorizeUrl: "https://oidc.example.com"
 ```
 
+## Images
+
+The chart's default images:
+
+| Image | Used by |
+|-------|---------|
+| `ghcr.io/crabamole/rustdesk-server:1.1.16-1` | hbbs, hbbr |
+| `ghcr.io/crabamole/rustdesk-api:3.0.1` | api-server |
+| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-3` | web client |
+| `docker.io/library/postgres:17.11-trixie` | bundled PostgreSQL (`postgresql.enabled`) |
+| `ghcr.io/rophy/oidc-mock:20260913-34fdbaf` | OIDC mock (`oidcMock.enabled`) |
+
+`global.imageRegistry` and `global.imagePullSecrets` apply to all of them.
+
 ## Exposing it
 
 Everything goes through the web client Service (port 80): it serves the web app and

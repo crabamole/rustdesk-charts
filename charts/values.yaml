@@ -3,6 +3,8 @@ fullnameOverride: ""
 
 global:
   imageRegistry: ""
+  # Secrets for pulling from a private registry, e.g. [{name: corp-registry}].
+  imagePullSecrets: []
 
 keypair:
   secretName: rustdesk-keypair

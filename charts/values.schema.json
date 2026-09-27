@@ -7,7 +7,15 @@
     "global": {
       "type": "object",
       "properties": {
-        "imageRegistry": { "type": "string" }
+        "imageRegistry": { "type": "string" },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "name": { "type": "string", "minLength": 1 } },
+            "required": ["name"]
+          }
+        }
       }
     },
     "keypair": {

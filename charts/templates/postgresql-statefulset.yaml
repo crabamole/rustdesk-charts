@@ -18,6 +18,7 @@ spec:
         {{- include "rustdesk.selectorLabels" (dict "context" . "component" "postgresql") | nindent 8 }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
+      {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
       # No pod needs the Kubernetes API.
       automountServiceAccountToken: false
       securityContext:

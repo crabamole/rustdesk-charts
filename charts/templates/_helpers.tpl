@@ -77,6 +77,16 @@ Name of the Secret containing oauth2.toml.
 {{- end -}}
 
 {{/*
+Pod imagePullSecrets from global.imagePullSecrets.
+*/}}
+{{- define "rustdesk.imagePullSecrets" -}}
+{{- with .Values.global.imagePullSecrets }}
+imagePullSecrets:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Image reference with global registry override.
 */}}
 {{- define "rustdesk.image" -}}

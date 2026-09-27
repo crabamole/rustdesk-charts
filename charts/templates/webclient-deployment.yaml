@@ -23,6 +23,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
+      {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
       # No pod needs the Kubernetes API.
       automountServiceAccountToken: false
       {{- with .Values.webclient.nodeSelector }}
