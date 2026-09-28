@@ -18,4 +18,4 @@ Service ports:
 
 Login is OIDC-only; there are no passwords. Nobody is admin until you promote
 someone: log in once through OIDC, then run
-  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }} -- /app/rustdesk-api admin promote "<name>"
+  kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }} -- /app/rustdesk-api admin promote <email>

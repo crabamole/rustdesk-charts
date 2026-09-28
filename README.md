@@ -180,15 +180,17 @@ kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api oidc che
 
 Login is OIDC-only: the api-server stores no passwords and `POST /api/login`
 always returns 401. Nobody is admin until an operator promotes them with the
-api-server's CLI, which works directly on the database:
+api-server's CLI, which works directly on the database and takes the user's email
+(the ID token's `email` claim; case-insensitive):
 
 ```bash
 # the user must have logged in through OIDC once (that creates the account)
-kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin promote "Alice Chen"
-kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin demote "Alice Chen"
+kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin promote alice@example.com
+kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin demote alice@example.com
 ```
 
-The user name is the OIDC `name` claim. Upgrading an existing install removes
+Users whose IdP sends no email cannot be promoted, and an email shared by several
+users is refused. Upgrading an existing install removes
 the old built-in `admin` account (its password was public); the first user you
 promote takes over its shared address books.
 
