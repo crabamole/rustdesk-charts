@@ -68,8 +68,8 @@ The chart's default images:
 | Image | Used by |
 |-------|---------|
 | `ghcr.io/crabamole/rustdesk-server:1.1.16-1` | hbbs, hbbr |
-| `ghcr.io/crabamole/rustdesk-api:3.0.1` | api-server |
-| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-3` | web client |
+| `ghcr.io/crabamole/rustdesk-api:3.1.0` | api-server |
+| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-4` | web client |
 | `docker.io/library/postgres:17.11-trixie` | bundled PostgreSQL (`postgresql.enabled`) |
 | `ghcr.io/rophy/oidc-mock:20260913-34fdbaf` | OIDC mock (`oidcMock.enabled`) |
 
@@ -299,6 +299,15 @@ kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3 ./db_v2.sqlite3
 kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-wal ./db_v2.sqlite3-wal
 kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-shm ./db_v2.sqlite3-shm
 ```
+
+## Upgrading to 0.5.2
+
+0.5.2 ships rustdesk-api 3.1.0 and web client 1.4.9-4.
+
+- `rustdesk-api admin promote|demote` take the user's email; names are no longer
+  accepted. See [Login and admins](#login-and-admins).
+- New `global.imagePullSecrets` for registries that need a login.
+- The bundled PostgreSQL is pinned to `17.11-trixie`.
 
 ## Upgrading to 0.5.0
 

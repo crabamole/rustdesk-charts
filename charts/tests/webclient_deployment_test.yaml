@@ -41,7 +41,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/crabamole/rustdesk/web-client:1.4.9-3
+          value: ghcr.io/crabamole/rustdesk/web-client:1.4.9-4
 
   - it: uses global image registry override
     template: templates/webclient-deployment.yaml
@@ -50,7 +50,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: registry.example.com/crabamole/rustdesk/web-client:1.4.9-3
+          value: registry.example.com/crabamole/rustdesk/web-client:1.4.9-4
 
   - it: renders env vars when set
     template: templates/webclient-deployment.yaml
