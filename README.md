@@ -38,7 +38,7 @@ kubectl create secret generic rustdesk-keypair \
   --from-literal=id_ed25519="$secret_key" \
   -n rustdesk
 
-# Save the public key — needed for client configuration and RUSTDESK_KEY
+# Save the public key: native clients need it
 echo "$public_key"
 ```
 
