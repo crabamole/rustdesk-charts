@@ -222,7 +222,7 @@ always fail. Use "Continue with ..." instead.
 ## Device policy
 
 Admins set the permission settings of every device on the webconsole's **Policy** page
-(keyboard, clipboard, file transfer, audio, camera, terminal, TCP tunneling, remote
+(keyboard, clipboard, file transfer, file copy and paste, audio, camera, terminal, TCP tunneling, remote
 restart, recording, blocking input, privacy mode, remote printer, remote configuration
 changes, permission type). Devices that use this server's API pick up a change on their
 next heartbeat, within about 15 seconds.
