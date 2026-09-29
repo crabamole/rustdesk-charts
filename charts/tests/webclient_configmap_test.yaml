@@ -1,0 +1,15 @@
+suite: web client nginx config
+templates:
+  - webclient-configmap.yaml
+tests:
+  - it: keeps the client's port in the Host sent to the api-server
+    asserts:
+      - notMatchRegex:
+          path: data["nginx.conf"]
+          pattern: 'proxy_set_header Host \$host;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?s)location /api/ \{[^}]*proxy_set_header Host \$http_host;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?s)location /ui \{[^}]*proxy_set_header Host \$http_host;'
