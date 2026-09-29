@@ -219,6 +219,22 @@ anonymous connections.
 Upstream native clients still show username/password fields; logins through them
 always fail. Use "Continue with ..." instead.
 
+## Device policy
+
+Admins set the permission settings of every device on the webconsole's **Policy** page
+(keyboard, clipboard, file transfer, audio, camera, terminal, TCP tunneling, remote
+restart, recording, blocking input, privacy mode, remote printer, remote configuration
+changes, permission type). Devices that use this server's API pick up a change on their
+next heartbeat, within about 15 seconds.
+
+- **Not managed** leaves the device's own setting; **Device default** resets it to the
+  client's built-in default.
+- As in RustDesk Pro, a user can change a setting locally after it arrives. **Re-push to
+  all devices**, or `kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api policy repush`,
+  sends the policy again and reverts such changes.
+- The policy restricts what a device allows when someone connects to it; it does not
+  limit what its user can do on other machines.
+
 ## Database
 
 hbbs and the api-server run as separate pods sharing one PostgreSQL database. The
