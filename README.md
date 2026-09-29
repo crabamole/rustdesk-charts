@@ -189,6 +189,12 @@ kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin pr
 kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api admin demote alice@example.com
 ```
 
+The first OIDC login creates an active, non-admin account
+(`apiserver.env.OAUTH2_CREATE_USER: "1"`, the default), so anyone your IdP lets
+through this client can use RustDesk. Limit access with the IdP's user or group
+assignment for the client. Set it to `"0"` to create new accounts disabled until an
+admin activates them on the web console's Users page.
+
 Users whose IdP sends no email cannot be promoted, and an email shared by several
 users is refused. Upgrading an existing install removes
 the old built-in `admin` account (its password was public); the first user you
