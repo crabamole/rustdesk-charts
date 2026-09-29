@@ -163,6 +163,9 @@ apiserver:
       cpu: 10m
       memory: 64Mi
   env:
+    # External URL users open, e.g. https://rustdesk.example.com (no path). Empty: taken
+    # from the request's Host / X-Forwarded-* headers. Used for the OIDC callback URL.
+    PUBLIC_URL: ""
     OAUTH2_CREATE_USER: "1"
     MAX_DATABASE_CONNECTIONS: "20"
   podAnnotations: {}

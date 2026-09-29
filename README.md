@@ -99,8 +99,17 @@ ingress:
 
 With other routing (an Istio VirtualService, a Gateway API HTTPRoute, ...), route
 the host to the `<release>-rustdesk-webclient` Service on port 80 the same way,
-keep the `Host` header (the api-server builds its OIDC callback URL from it) and
-allow long-lived WebSockets.
+keep the `Host` header and allow long-lived WebSockets.
+
+The api-server builds its OIDC callback URL from the request's `Host` (or
+`X-Forwarded-Host` / `X-Forwarded-Proto`). If a proxy rewrites those, or users reach
+the service on another port (e.g. a NodePort), set the URL users open explicitly:
+
+```yaml
+apiserver:
+  env:
+    PUBLIC_URL: https://rustdesk.example.com
+```
 
 ## Single instance
 
@@ -159,7 +168,8 @@ issuer = "https://login.example.com/<tenant>/v2.0"  # the IdP's issuer URL
   IdP's ID tokens, i.e. the `issuer` in its `/.well-known/openid-configuration`.
   ID tokens with another issuer, another audience than `app_id`, or an expired
   `exp` are rejected.
-- Register `https://<your host>/api/oidc/callback` as the redirect URI.
+- Register `https://<your host>/api/oidc/callback` as the redirect URI
+  (`<PUBLIC_URL>/api/oidc/callback` when `apiserver.env.PUBLIC_URL` is set).
 - If the IdP's certificate comes from a private CA, add it with `extraCACerts`.
 
 ```bash
