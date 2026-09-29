@@ -22,10 +22,12 @@ spec:
         {{- with .Values.apiserver.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.apiserver.podAnnotations }}
       annotations:
+        # oauth2.toml is read at startup (subPath mount); an existingSecret needs a manual restart.
+        checksum/oauth2: {{ include (print $.Template.BasePath "/hbbs-oauth2-configmap.yaml") . | sha256sum }}
+        {{- with .Values.apiserver.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}

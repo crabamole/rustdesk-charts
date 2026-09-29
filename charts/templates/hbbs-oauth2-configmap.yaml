@@ -15,7 +15,7 @@ stringData:
     app_id = "rustdesk-api"
     app_secret = "appsecret"
     scope = "openid email profile"
-    op_auth_string = "oidc/dex"
-    op = "dex"
+    op_auth_string = "oidc/OIDC"
+    op = "OIDC"
     issuer = "{{ .Values.oidcMock.authorizeUrl }}"
 {{- end }}

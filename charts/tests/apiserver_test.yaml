@@ -2,6 +2,7 @@ suite: apiserver
 templates:
   - templates/apiserver-deployment.yaml
   - templates/apiserver-service.yaml
+  - templates/hbbs-oauth2-configmap.yaml
 tests:
   - it: renders its own Deployment
     template: templates/apiserver-deployment.yaml
@@ -194,3 +195,21 @@ tests:
             name: oauth2
             secret:
               secretName: corp-oidc
+  - it: restarts when the generated OIDC provider file changes
+    template: templates/apiserver-deployment.yaml
+    set:
+      oidcMock.enabled: true
+      oidcMock.authorizeUrl: https://oidc.example.com
+    asserts:
+      - matchRegex:
+          path: spec.template.metadata.annotations["checksum/oauth2"]
+          pattern: '^[0-9a-f]{64}$'
+  - it: keeps podAnnotations next to the checksum
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver.podAnnotations:
+        example.com/team: remote-support
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["example.com/team"]
+          value: remote-support

@@ -153,14 +153,16 @@ token_exchange_url = "https://login.example.com/oauth2/v2.0/token"
 app_id = "<client id>"
 app_secret = "<client secret>"
 scope = "openid email profile"
-op = "corp"                  # identifier the client sends back
-op_auth_string = "oidc/corp" # must be "oidc/<op>"
+op = "OIDC"                  # login button label ("Sign in with OIDC"), sent back by clients
+op_auth_string = "oidc/OIDC" # must be "oidc/<op>"
 issuer = "https://login.example.com/<tenant>/v2.0"  # the IdP's issuer URL
 ```
 
 - `provider`: `Oauth2` (sends the client secret both as HTTP Basic and in the
   form body), `Dex` (HTTP Basic only) or `Github`. Other names in the code
   (`Azure`, `Okta`, ...) are not implemented and are rejected; use `Oauth2`.
+- `op` is the label of the login button in the web console ("Sign in with OIDC")
+  and in the clients ("Continue with OIDC"); letter case is kept.
 - `scope` must include `openid`: users are identified by the ID token's `sub`.
   `name` (else `preferred_username`) and `email` are only shown, never used to
   match accounts.
