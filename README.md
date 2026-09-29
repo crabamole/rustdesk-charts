@@ -229,8 +229,9 @@ next heartbeat, within about 15 seconds.
 
 - **Not managed** leaves the device's own setting; **Device default** resets it to the
   client's built-in default.
-- As in RustDesk Pro, a user can change a setting locally after it arrives. **Re-push to
-  all devices**, or `kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api policy repush`,
+- As in RustDesk Pro, a user can change a setting locally after it arrives. Saving the
+  policy again, **Re-push to all devices**, or
+  `kubectl exec -n rustdesk deploy/rustdesk-apiserver -- /app/rustdesk-api policy repush`,
   sends the policy again and reverts such changes.
 - The policy restricts what a device allows when someone connects to it; it does not
   limit what its user can do on other machines.
