@@ -68,8 +68,8 @@ The chart's default images:
 | Image | Used by |
 |-------|---------|
 | `ghcr.io/crabamole/rustdesk-server:1.1.16-1` | hbbs, hbbr |
-| `ghcr.io/crabamole/rustdesk-api:3.1.0` | api-server |
-| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-4` | web client |
+| `ghcr.io/crabamole/rustdesk-api:3.2.0` | api-server |
+| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-5` | web client |
 | `docker.io/library/postgres:17.11-trixie` | bundled PostgreSQL (`postgresql.enabled`) |
 | `ghcr.io/rophy/oidc-mock:20260913-34fdbaf` | OIDC mock (`oidcMock.enabled`) |
 
@@ -315,53 +315,9 @@ kubectl delete secret <fullname>-postgresql -n <namespace>
 `rustdesk`, or `<release>-rustdesk` otherwise — see `rustdesk.fullname` in
 `templates/_helpers.tpl`, or run `helm template` and check the object names.)
 
-### Upgrading from 0.2.x
+## Upgrading
 
-This is a breaking change. 0.2.x stored hbbs state in a SQLite database on a
-persistent volume; 0.3.0 requires PostgreSQL and removes the hbbs PVC
-(`hbbs.persistence`), `apiserver.enabled`, and the per-component
-`databaseUrl`/`databaseUrlSecretName` values. Setting `postgresql.persistence.size`
-after the first install has no effect — the StatefulSet's `volumeClaimTemplates`
-are immutable, so update it in your values file before the first 0.3.0 install.
-
-Data is **not** migrated automatically. hbbs runs its SQLite database in WAL
-mode, so committed transactions can sit in `db_v2.sqlite3-wal` instead of the
-main file — back up all three files from the hbbs pod (with hbbs stopped or
-quiesced) before upgrading if you need to keep existing peer/user records:
-
-```bash
-kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3 ./db_v2.sqlite3
-kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-wal ./db_v2.sqlite3-wal
-kubectl cp <namespace>/<hbbs-pod>:/data/db_v2.sqlite3-shm ./db_v2.sqlite3-shm
-```
-
-## Upgrading to 0.5.2
-
-0.5.2 ships rustdesk-api 3.1.0 and web client 1.4.9-4.
-
-- `rustdesk-api admin promote|demote` take the user's email; names are no longer
-  accepted. See [Login and admins](#login-and-admins).
-- New `global.imagePullSecrets` for registries that need a login.
-- The bundled PostgreSQL is pinned to `17.11-trixie`.
-
-## Upgrading to 0.5.0
-
-0.5.0 ships rustdesk-api 3.0.0 and web client 1.4.9-20260927-1. Breaking changes:
-
-- **Login is OIDC-only.** Password login and the seeded `admin` user are gone (a
-  database migration deletes it). Set `hbbs.oauth2.existingSecret` (your IdP) or
-  `oidcMock.authorizeUrl`; see [OIDC provider](#oidc-provider). Admins are promoted
-  with the `rustdesk-api admin` CLI; see [Login and admins](#login-and-admins).
-- **Provider files need `issuer`** (except `Github`); ID tokens with another issuer,
-  audience or an expired `exp` are rejected.
-- **Users are identified by the OIDC `sub`.** Existing accounts are taken over by the
-  first login whose email matches exactly one account without a `sub`.
-- **Logins finished in another browser than they started in need confirmation.**
-  Native clients show an Approve/Deny page after the IdP login.
-- `hbbs.relayAddress` is required; `hbbr.replicas` and `webclient.env.RUSTDESK_KEY`
-  are rejected (the web client reads the key from the keypair Secret, which is now
-  checked at install time).
-- `LOGGED_IN_ONLY` defaults to `Y`; NetworkPolicies are on by default.
+Version-specific steps are in [UPGRADING.md](UPGRADING.md).
 
 ## Single-port architecture
 
