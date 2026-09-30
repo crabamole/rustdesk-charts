@@ -27,7 +27,7 @@ The chart requires a Kubernetes secret containing the hbbs keypair. hbbs signs w
 ```bash
 # Generate keypair
 output=$(docker run --rm --entrypoint /usr/local/bin/rustdesk-utils \
-  ghcr.io/crabamole/rustdesk-server:1.1.16-1 genkeypair)
+  ghcr.io/crabamole/rustdesk-server:1.1.16-2 genkeypair)
 public_key=$(echo "$output" | grep 'Public Key:' | awk '{print $3}')
 secret_key=$(echo "$output" | grep 'Secret Key:' | awk '{print $3}')
 
@@ -67,7 +67,7 @@ The chart's default images:
 
 | Image | Used by |
 |-------|---------|
-| `ghcr.io/crabamole/rustdesk-server:1.1.16-1` | hbbs, hbbr |
+| `ghcr.io/crabamole/rustdesk-server:1.1.16-2` | hbbs, hbbr |
 | `ghcr.io/crabamole/rustdesk-api:3.2.0` | api-server |
 | `ghcr.io/crabamole/rustdesk/web-client:1.4.9-6` | web client |
 | `docker.io/library/postgres:17.11-trixie` | bundled PostgreSQL (`postgresql.enabled`) |
