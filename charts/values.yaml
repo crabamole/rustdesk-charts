@@ -68,7 +68,7 @@ webclient:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk/web-client
-    tag: "1.4.9-5"
+    tag: "1.4.9-6"
     pullPolicy: IfNotPresent
   replicas: 1
   podAnnotations: {}
