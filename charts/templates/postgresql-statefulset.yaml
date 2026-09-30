@@ -16,6 +16,10 @@ spec:
     metadata:
       labels:
         {{- include "rustdesk.selectorLabels" (dict "context" . "component" "postgresql") | nindent 8 }}
+      {{- with $pg.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}

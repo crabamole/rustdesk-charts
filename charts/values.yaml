@@ -147,6 +147,7 @@ oidcMock:
     requests:
       cpu: 10m
       memory: 32Mi
+  podAnnotations: {}
 
 apiserver:
   port: 21114
@@ -212,3 +213,4 @@ postgresql:
     requests:
       cpu: 50m
       memory: 128Mi
+  podAnnotations: {}

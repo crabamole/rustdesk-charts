@@ -8,6 +8,22 @@ templates:
   - templates/postgresql-secret.yaml
   - templates/database-secret.yaml
 tests:
+  - it: renders pod annotations
+    template: templates/postgresql-statefulset.yaml
+    set:
+      postgresql.podAnnotations:
+        sidecar.istio.io/inject: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+
+  - it: omits annotations when empty
+    template: templates/postgresql-statefulset.yaml
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations
+
   - it: renders a single-instance StatefulSet by default
     template: templates/postgresql-statefulset.yaml
     asserts:

@@ -1,0 +1,20 @@
+suite: oidc-mock deployment
+set:
+  oidcMock.authorizeUrl: https://oidc.example.com
+  hbbs.relayAddress: rustdesk.example.com:443
+templates:
+  - templates/oidc-mock-deployment.yaml
+tests:
+  - it: renders pod annotations
+    set:
+      oidcMock.podAnnotations:
+        sidecar.istio.io/inject: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+
+  - it: omits annotations when empty
+    asserts:
+      - isNull:
+          path: spec.template.metadata.annotations

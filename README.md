@@ -140,6 +140,20 @@ talks to the Kubernetes API). Set `serviceAccount.create: false` and
 `serviceAccount.name` to use an existing one. There is no PodDisruptionBudget: with
 a single replica each, a PDB would block node drains.
 
+## Service mesh (Istio)
+
+Every component accepts `podAnnotations` (`hbbs`, `hbbr`, `apiserver`, `webclient`,
+`postgresql`, `oidcMock`). Inject the sidecar into all of them or into none: with
+STRICT mTLS, a pod with a sidecar refuses plain connections from pods without one.
+For the bundled Postgres that shows as hbbs failing to connect and the api-server
+hanging at startup without opening its port. To keep a component out of the mesh:
+
+```yaml
+postgresql:
+  podAnnotations:
+    sidecar.istio.io/inject: "false"
+```
+
 ## OIDC provider
 
 Login is OIDC-only. For production, disable the mock and give the api-server your
