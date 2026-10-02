@@ -154,6 +154,17 @@ postgresql:
     sidecar.istio.io/inject: "false"
 ```
 
+## Client addresses behind proxies
+
+hbbs, hbbr and the api-server record the client address the web client nginx passes them in
+`X-Real-IP`. When the web client is behind other proxies, list them in `realIp.trustedProxies` and
+name the header they put the client address in (`realIp.header`, default `X-Forwarded-For`);
+otherwise the nearest proxy's address is recorded. Client-supplied values are always replaced.
+
+To make the backends accept forwarded headers only from the web client pods, set
+`TRUSTED_PROXIES` (comma-separated CIDRs, e.g. the cluster's pod range) in `hbbs.env`,
+`hbbr.env` and `apiserver.env`.
+
 ## OIDC provider
 
 Login is OIDC-only. For production, disable the mock and give the api-server your

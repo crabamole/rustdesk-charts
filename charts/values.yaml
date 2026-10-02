@@ -86,6 +86,13 @@ webclient:
   # RUSTDESK_KEY comes from the keypair Secret; add other env vars here.
   env: {}
 
+# Client address recorded by hbbs, hbbr and the api-server. The web client nginx takes it from
+# `header` when the request comes from a trusted proxy, and passes only that to the backends.
+realIp:
+  header: X-Forwarded-For
+  # CIDRs of the proxies in front of the web client nginx. Empty: use the connecting address.
+  trustedProxies: []
+
 # Ingress-only NetworkPolicies: each component accepts traffic only from the
 # components that call it; the web client (and the OIDC mock) accept any source.
 networkPolicy:
