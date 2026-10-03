@@ -15,6 +15,11 @@ listed need nothing beyond the upgrade itself.
   the header it puts the client address in (default `X-Forwarded-For`). The release
   notes warn when `ingress.enabled` is true and the list is empty. See
   [Client addresses behind proxies](README.md#client-addresses-behind-proxies).
+- **Upgrade the api-server and hbbs together.** hbbs now calls a new api-server
+  endpoint to attribute connections to the controlling user; an older api-server
+  still works (hbbs falls back automatically) but without that attribution. The
+  api-server's migration also fixes file-transfer audit records that had the
+  remote and local device swapped; existing rows are not corrected.
 
 ## 0.6.0
 
