@@ -3,6 +3,19 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.6.3
+
+- **Set `realIp.trustedProxies` if a proxy sits in front of the web client** (the
+  chart's own `ingress:`, an Ingress controller or a load balancer). The web client's
+  nginx now replaces `X-Real-IP` and `X-Forwarded-For` with the address it resolves
+  itself. With `realIp.trustedProxies` empty that is the front proxy's address, so
+  every client is recorded with it and all clients share one registration rate
+  limit (before, the front proxy's `X-Real-IP` passed through). Set
+  `realIp.trustedProxies` to the front proxy's address range and `realIp.header` to
+  the header it puts the client address in (default `X-Forwarded-For`). The release
+  notes warn when `ingress.enabled` is true and the list is empty. See
+  [Client addresses behind proxies](README.md#client-addresses-behind-proxies).
+
 ## 0.6.0
 
 0.6.0 ships rustdesk-api 3.2.0 and web client 1.4.9-5.

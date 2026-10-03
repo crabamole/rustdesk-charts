@@ -19,3 +19,10 @@ Service ports:
 Login is OIDC-only; there are no passwords. Nobody is admin until you promote
 someone: log in once through OIDC, then run
   kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }} -- /app/rustdesk-api admin promote <email>
+{{- if and .Values.ingress.enabled (not .Values.realIp.trustedProxies) }}
+
+WARNING: ingress.enabled is true but realIp.trustedProxies is empty, so every
+client is recorded with the Ingress controller's address and all clients share
+one registration rate limit. Set realIp.trustedProxies to the Ingress
+controller's address range and realIp.header to the header it sets.
+{{- end }}

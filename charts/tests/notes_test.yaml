@@ -1,0 +1,23 @@
+suite: notes
+templates:
+  - templates/NOTES.txt
+tests:
+  - it: warns when an Ingress fronts the web client without trusted proxies
+    set:
+      ingress.enabled: true
+    asserts:
+      - matchRegexRaw:
+          pattern: "WARNING: ingress.enabled is true but realIp.trustedProxies is empty"
+
+  - it: does not warn once the Ingress proxies are trusted
+    set:
+      ingress.enabled: true
+      realIp.trustedProxies: ["10.0.0.0/8"]
+    asserts:
+      - notMatchRegexRaw:
+          pattern: "WARNING"
+
+  - it: does not warn without an Ingress
+    asserts:
+      - notMatchRegexRaw:
+          pattern: "WARNING"
