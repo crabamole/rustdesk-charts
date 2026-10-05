@@ -15,7 +15,7 @@ hbbs:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-server
-    tag: "1.1.16-2"
+    tag: "1.1.16-3"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
   # Required: public host:port clients reach hbbr through (e.g. rustdesk.example.com:443).
@@ -47,7 +47,7 @@ hbbr:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-server
-    tag: "1.1.16-2"
+    tag: "1.1.16-3"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
   podAnnotations: {}
@@ -68,7 +68,7 @@ webclient:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk/web-client
-    tag: "1.4.9-6"
+    tag: "1.4.9-7"
     pullPolicy: IfNotPresent
   replicas: 1
   podAnnotations: {}
@@ -161,7 +161,7 @@ apiserver:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-api
-    tag: "3.2.0"
+    tag: "3.3.0"
     pullPolicy: IfNotPresent
   resources:
     limits:

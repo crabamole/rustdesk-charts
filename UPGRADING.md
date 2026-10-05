@@ -3,8 +3,15 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
-## 0.6.3
+## 0.7.0
 
+0.7.0 ships rustdesk-server 1.1.16-3, rustdesk-api 3.3.0 and web client 1.4.9-7.
+
+- **The login dialog offers OIDC only.** Web client 1.4.9-7 and the cRustDesk 1.4.9-7
+  native builds no longer show the username and password fields; the api-server
+  never accepted password logins. Stock RustDesk clients still show them.
+- **New Viewers list.** The console's Devices page lists machines that log in with the
+  cRustDesk client build (view-only machines). Rows appear from their next login.
 - **Set `realIp.trustedProxies` if a proxy sits in front of the web client** (the
   chart's own `ingress:`, an Ingress controller or a load balancer). The web client's
   nginx now replaces `X-Real-IP` and `X-Forwarded-For` with the address it resolves
