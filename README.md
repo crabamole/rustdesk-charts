@@ -78,9 +78,17 @@ The chart's default images:
 ## Exposing it
 
 Everything goes through the web client Service (port 80): it serves the web app and
-routes `/ws/id`, `/ws/relay`, `/api` and `/ui` itself. So exposing the chart takes a
-single rule sending your host to that Service; set `hbbs.relayAddress` to
-`<host>:443`. The chart can create an Ingress for you, for example with
+routes `/ws/id`, `/ws/relay`, `/api` and `/ui` itself:
+
+| Path | Backend |
+|------|---------|
+| `/ws/id` | hbbs:21118 (WebSocket) |
+| `/ws/relay` | hbbr:21119 (WebSocket) |
+| `/api/`, `/ui` | api-server |
+| `/` | web client |
+
+So exposing the chart takes a single rule sending your host to that Service; set
+`hbbs.relayAddress` to `<host>:443`. The chart can create an Ingress for you, for example with
 ingress-nginx and cert-manager:
 
 ```yaml
@@ -359,28 +367,3 @@ kubectl delete secret <fullname>-postgresql -n <namespace>
 ## Upgrading
 
 Version-specific steps are in [UPGRADING.md](UPGRADING.md).
-
-## Single-port architecture
-
-For deployments behind a TLS-terminating reverse proxy (e.g., Istio, nginx), all traffic can go through a single domain on port 443:
-
-| Path | Backend | Protocol |
-|------|---------|----------|
-| `/ws/id` | hbbs:21118 | WebSocket |
-| `/ws/relay` | hbbr:21119 | WebSocket |
-| `/api/*` | mock 200 | HTTP (for unpatched native clients) |
-| `/` | webclient:80 | HTTP |
-
-Enable Istio routing:
-
-```yaml
-istio:
-  enabled: true
-  gateway: istio-system/default-gateway
-  hosts:
-    - rustdesk.example.com
-```
-
-Native clients connect with:
-- `custom-rendezvous-server`: `rustdesk.example.com`
-- `api-server`: `https://rustdesk.example.com`
