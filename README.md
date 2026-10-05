@@ -101,6 +101,21 @@ With other routing (an Istio VirtualService, a Gateway API HTTPRoute, ...), rout
 the host to the `<release>-rustdesk-webclient` Service on port 80 the same way,
 keep the `Host` header and allow long-lived WebSockets.
 
+### Client settings and ports
+
+Clients reach everything through that one host, so their WebSocket URLs are
+`wss://<host>/ws/id` and `wss://<host>/ws/relay` (or `ws://` on port 80):
+
+- Set `custom-rendezvous-server` to `<host>` **without a port**, `api-server` to
+  `https://<host>`, and leave `relay-server` empty (hbbs hands out `hbbs.relayAddress`).
+- Stock RustDesk clients only use WebSocket on 443 (wss, chosen by an `https` api-server)
+  or 80 (ws), and drop any other port. Writing `<host>:443` as the rendezvous server
+  makes them send relayed sessions to `/ws/id`, so those sessions fail.
+- The [cRustDesk builds](https://github.com/crabamole/rustdesk) also support another
+  port `P`: set `custom-rendezvous-server` to `<host>:P`, `api-server` to
+  `http(s)://<host>:P`, and `hbbs.relayAddress` to `<host>:P`; all three must carry
+  the same port.
+
 The api-server builds its OIDC callback URL from the request's `Host` (or
 `X-Forwarded-Host` / `X-Forwarded-Proto`). If a proxy rewrites those, or users reach
 the service on another port (e.g. a NodePort), set the URL users open explicitly:
