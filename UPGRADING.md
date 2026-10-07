@@ -3,6 +3,14 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.8.0
+
+0.8.0 ships rustdesk-api 3.4.0 and web client 1.4.9-8 (rustdesk-server 1.1.16-3 unchanged).
+
+- **Native clients must be cRustDesk 1.4.9-8 or later.** Logins now hand their result only to the app or page that started them; cRustDesk 1.4.9-7 and earlier and stock RustDesk clients can no longer log in. Upgrade the clients together with the chart.
+- **Audit rows name the viewer machine.** Connection records carry the viewer's hostname, OS and login address from its login (self-reported).
+- **The api-server's database migration is one-way** (0008, viewer rows per machine and user). Back up the database first if you may need to roll back.
+
 ## 0.7.0
 
 0.7.0 ships rustdesk-server 1.1.16-3, rustdesk-api 3.3.0 and web client 1.4.9-7.

@@ -68,8 +68,8 @@ The chart's default images:
 | Image | Used by |
 |-------|---------|
 | `ghcr.io/crabamole/rustdesk-server:1.1.16-3` | hbbs, hbbr |
-| `ghcr.io/crabamole/rustdesk-api:3.3.0` | api-server |
-| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-7` | web client |
+| `ghcr.io/crabamole/rustdesk-api:3.4.0` | api-server |
+| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-8` | web client |
 | `docker.io/library/postgres:17.11-trixie` | bundled PostgreSQL (`postgresql.enabled`) |
 | `ghcr.io/rophy/oidc-mock:20260913-34fdbaf` | OIDC mock (`oidcMock.enabled`) |
 
