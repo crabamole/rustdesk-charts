@@ -89,7 +89,7 @@ spec:
             # reconnect, instead of idling on a backend the Service no longer routes to.
             preStop:
               exec:
-                command: ["sh", "-c", "end=$(($(date +%s) + {{ max (sub .Values.webclient.terminationGracePeriodSeconds 10) 5 }})); sleep 5; while [ $(date +%s) -lt $end ] && netstat -tn | grep -qE ':21119 +ESTABLISHED'; do sleep 2; done; nginx -s stop"]
+                command: ["sh", "-c", "end=$(($(date +%s) + {{ max (sub .Values.webclient.terminationGracePeriodSeconds 10) 5 }})); sleep 5; while [ $(date +%s) -lt $end ] && { ! command -v netstat >/dev/null || netstat -tn | grep -qE ':21119 +ESTABLISHED'; }; do sleep 2; done; nginx -s stop"]
           ports:
             - name: http
               containerPort: 8080

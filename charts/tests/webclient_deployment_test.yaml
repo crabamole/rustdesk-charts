@@ -245,7 +245,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].lifecycle.preStop.exec.command[2]
-          value: "end=$(($(date +%s) + 110)); sleep 5; while [ $(date +%s) -lt $end ] && netstat -tn | grep -qE ':21119 +ESTABLISHED'; do sleep 2; done; nginx -s stop"
+          value: "end=$(($(date +%s) + 110)); sleep 5; while [ $(date +%s) -lt $end ] && { ! command -v netstat >/dev/null || netstat -tn | grep -qE ':21119 +ESTABLISHED'; }; do sleep 2; done; nginx -s stop"
 
   - it: spreads pods over nodes without blocking scheduling
     template: templates/webclient-deployment.yaml
