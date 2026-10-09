@@ -164,8 +164,9 @@ Rolling updates replace one pod at a time:
 | web client | The stopping pod takes no new connections and keeps relaying its sessions until they end or `webclient.terminationGracePeriodSeconds` (default 1800 s) minus 10 s runs out; nginx then stops and its devices reconnect to the other pods. Updating every pod can take replicas x the grace period. |
 
 hbbs serves `/livez` and `/readyz` on port 21121, hbbr on 21122, the api-server on its API
-port. A pod whose `/readyz` fails (database unreachable, shutting down) leaves the Service;
-one whose `/livez` fails is restarted.
+port. A pod whose `/readyz` fails leaves the Service: shutting down for all three, and the
+database unreachable for the api-server (hbbs keeps its devices through a database outage); one
+whose `/livez` fails is restarted.
 
 With two or more replicas a component gets a PodDisruptionBudget (one pod down at a time).
 Pods of each component are spread over nodes when the scheduler can (`ScheduleAnyway`).
