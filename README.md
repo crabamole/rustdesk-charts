@@ -174,7 +174,7 @@ the setting times the number of pods.
 
 hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes device
 connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
-before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 15 always ends in a kill.
+before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin.
 
 ### Sizing
 
@@ -411,11 +411,12 @@ needs:
   (`postgresql.enabled: false`, `database.url` pointing at the replica);
 - the same keypair Secret and OIDC provider Secret;
 - the same `publicHost`, with the IdP redirect URI on it;
-- the chart installed with the same values, then scaled to zero:
+- the chart installed with the same values, without `--wait`, then scaled to zero (the
+  api-server crash-loops against the read-only replica until it is scaled down):
 
 ```bash
-kubectl scale -n rustdesk statefulset/rustdesk-hbbs statefulset/rustdesk-hbbr \
-  deploy/rustdesk-apiserver deploy/rustdesk-webclient --replicas=0
+kubectl scale -n <namespace> statefulset/<fullname>-hbbs statefulset/<fullname>-hbbr \
+  deploy/<fullname>-apiserver deploy/<fullname>-webclient --replicas=0
 ```
 
 To fail over, promote the replica, run `helm upgrade` with the same values (it restores the

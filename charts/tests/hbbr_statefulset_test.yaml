@@ -130,6 +130,22 @@ tests:
             name: RUST_LOG
             value: debug
 
+  - it: ignores a user HEALTH_PORT so the probes keep working
+    set:
+      hbbr.env:
+        HEALTH_PORT: "9999"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HEALTH_PORT
+            value: "21122"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HEALTH_PORT
+            value: "9999"
+
   - it: renders default resource limits
     asserts:
       - equal:
@@ -222,6 +238,7 @@ tests:
               path: /livez
               port: health
             periodSeconds: 2
+            timeoutSeconds: 5
             failureThreshold: 30
       - equal:
           path: spec.template.spec.containers[0].livenessProbe

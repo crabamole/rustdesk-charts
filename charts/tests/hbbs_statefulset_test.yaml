@@ -442,6 +442,22 @@ tests:
           path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
           value: ["sleep", "5"]
 
+  - it: ignores a user HEALTH_PORT so the probes keep working
+    set:
+      hbbs.env:
+        HEALTH_PORT: "9999"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HEALTH_PORT
+            value: "21121"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HEALTH_PORT
+            value: "9999"
+
   - it: waits up to 5 minutes for /livez at startup
     asserts:
       - equal:
@@ -451,4 +467,5 @@ tests:
               path: /livez
               port: health
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 60

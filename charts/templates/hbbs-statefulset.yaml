@@ -60,7 +60,9 @@ spec:
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_URLS" "value" (include "rustdesk.relayUrls" .)) }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_CHECKS" "value" (include "rustdesk.relayChecks" .)) }}
             {{- range $key, $value := .Values.hbbs.env }}
+            {{- if ne $key "HEALTH_PORT" }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}
+            {{- end }}
             {{- end }}
           env:
             {{- include "rustdesk.databaseEnv" (dict "context" $ "var" "DB_URL") | nindent 12 }}
@@ -95,6 +97,7 @@ spec:
               path: /livez
               port: health
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 60
           livenessProbe:
             httpGet:

@@ -30,5 +30,5 @@ Collected for the joint release; they move into UPGRADING.md then.
   `--mask` no longer swaps the relay to the pod's LAN address.
 - **Native clients on raw TCP 21116 always relay.**
 - **`KEEP_ALIVE_SECS` must stay below 30.**
-- **`RELAY_URLS` must be `wss://` when the web client is served over https.**
+- **`RELAY_URLS` must be `wss://` when the web client is served over https.** The chart derives it; this matters only if you override `RELAY_URLS` through `hbbs.env`, or set `PUBLIC_URL` to `http://` while the web client is served over https.
 - **`hbbs.replicas` is at most 32.**
