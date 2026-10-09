@@ -1,0 +1,17 @@
+{{- /* With one replica a budget would block node drains, so it exists only from two up. */}}
+{{- range $component := list "hbbs" "hbbr" "apiserver" "webclient" }}
+{{- if gt (int (index $.Values $component).replicas) 1 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" $ "component" $component) }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" $ "component" $component) | nindent 4 }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "rustdesk.selectorLabels" (dict "context" $ "component" $component) | nindent 6 }}
+{{- end }}
+{{- end }}

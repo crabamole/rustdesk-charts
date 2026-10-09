@@ -1,0 +1,38 @@
+suite: pod disruption budgets
+templates:
+  - templates/poddisruptionbudgets.yaml
+tests:
+  - it: renders none with one replica each (a budget would block node drains)
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: allows one pod down per component with two or more replicas
+    set:
+      hbbs.replicas: 2
+      hbbr.replicas: 2
+      apiserver.replicas: 2
+      webclient.replicas: 3
+    asserts:
+      - hasDocuments:
+          count: 4
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: spec.maxUnavailable
+          value: 1
+
+  - it: selects the component's pods
+    set:
+      hbbr.replicas: 2
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-hbbr
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: hbbr
+            app.kubernetes.io/instance: RELEASE-NAME
