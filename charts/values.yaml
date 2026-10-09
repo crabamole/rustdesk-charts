@@ -25,6 +25,8 @@ hbbs:
   command: ["hbbs"]
   # Devices spread over the pods; at most 32 (the pod ordinal travels in 5 bits).
   replicas: 1
+  # Client reconnect throttle is 18 s; moved devices must outlive it before the next pod restarts.
+  minReadySeconds: 20
   env:
     ALWAYS_USE_RELAY: "Y"
     # Only logged-in (OIDC) users may start connections; the api-server validates their session.

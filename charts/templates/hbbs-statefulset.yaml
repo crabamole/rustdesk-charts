@@ -8,6 +8,7 @@ spec:
   replicas: {{ .Values.hbbs.replicas }}
   serviceName: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}-hl
   podManagementPolicy: OrderedReady
+  minReadySeconds: {{ .Values.hbbs.minReadySeconds }}
   updateStrategy:
     type: RollingUpdate
   selector:

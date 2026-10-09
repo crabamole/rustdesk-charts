@@ -24,6 +24,8 @@ Collected for the joint release; they move into UPGRADING.md then.
   reach each other on 21120 and hbbr's health port on 21122.
 - **In-flight OIDC logins** on old api-server pods fail once during the upgrade.
 - **Unflushed legacy address-book writes** on old api-server pods are dropped.
+- **An hbbs rolling update takes about 20 s longer per pod** (`hbbs.minReadySeconds`, default 20): the next pod waits so moved devices outlast the client's 18 s reconnect throttle.
+- **api-server migration 0014** (index on `audit_conn_ref.created_at`) briefly blocks audit-ref inserts while it builds.
 - **api-server migration 0013** briefly locks the audit tables, and is one-way: back up the
   database first if you may need to roll back.
 - **hbbs changes:** it refuses `-k <public key>` (it needs the keypair); `-r` is removed;

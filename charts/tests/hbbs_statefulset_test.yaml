@@ -28,6 +28,26 @@ tests:
           path: spec.template.spec.securityContext.fsGroup
           value: 1000
 
+  - it: waits 20 s per pod during rolling updates by default
+    asserts:
+      - equal:
+          path: spec.minReadySeconds
+          value: 20
+
+  - it: allows overriding minReadySeconds
+    set:
+      hbbs.minReadySeconds: 0
+    asserts:
+      - equal:
+          path: spec.minReadySeconds
+          value: 0
+
+  - it: rejects a negative minReadySeconds
+    set:
+      hbbs.minReadySeconds: -1
+    asserts:
+      - failedTemplate: {}
+
   - it: requires login to start connections by default
     asserts:
       - contains:

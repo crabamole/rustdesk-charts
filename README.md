@@ -158,7 +158,7 @@ Rolling updates replace one pod at a time:
 
 | Component | During its update |
 |-----------|-------------------|
-| hbbs | Devices on the stopping pod reconnect at once to the others; running sessions are not affected. |
+| hbbs | Devices on the stopping pod reconnect at once to the others; running sessions are not affected. The next pod is only updated once the previous one has been Ready for `hbbs.minReadySeconds` (default 20 s), so devices that moved to it outlast the client's 18 s reconnect throttle. |
 | hbbr | The stopping pod takes no new sessions and relays its running ones until they end or `hbbr.terminationGracePeriodSeconds` (default 1800 s) runs out; those viewers then reconnect. Updating every pod can take replicas x the grace period. |
 | api-server | A 5 s pause before stopping lets the Service drop the pod first. |
 | web client | nginx stops gracefully and keeps proxied sessions for up to `webclient.terminationGracePeriodSeconds` (default 1800 s). |

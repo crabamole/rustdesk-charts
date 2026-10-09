@@ -34,6 +34,7 @@
         "image": { "$ref": "#/$defs/image" },
         "command": { "type": "array", "items": { "type": "string" } },
         "replicas": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "minReadySeconds": { "type": "integer", "minimum": 0 },
         "env": { "type": "object" },
         "oauth2": {
           "type": "object",
