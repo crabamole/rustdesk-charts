@@ -3,9 +3,11 @@
        Outside traffic enters through the web client, which proxies to hbbs, hbbr and the api-server. */}}
 {{- include "rustdesk.networkPolicy" (dict "context" . "component" "webclient" "port" "http") }}
 ---
-{{ include "rustdesk.networkPolicy" (dict "context" . "component" "hbbs" "port" "ws" "from" (list "webclient")) }}
+{{- /* hbbs pods forward session setup to each other and poll each hbbr pod's /readyz.
+       Kubelet probes come from the pod's own node, which NetworkPolicy does not block. */}}
+{{ include "rustdesk.networkPolicy" (dict "context" . "component" "hbbs" "port" "ws" "from" (list "webclient") "extra" (list (dict "port" "internal" "from" (list "hbbs")))) }}
 ---
-{{ include "rustdesk.networkPolicy" (dict "context" . "component" "hbbr" "port" "ws" "from" (list "webclient")) }}
+{{ include "rustdesk.networkPolicy" (dict "context" . "component" "hbbr" "port" "ws" "from" (list "webclient") "extra" (list (dict "port" "health" "from" (list "hbbs")))) }}
 ---
 {{ include "rustdesk.networkPolicy" (dict "context" . "component" "apiserver" "port" "api" "from" (list "webclient" "hbbs")) }}
 {{- if .Values.postgresql.enabled }}

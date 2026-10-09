@@ -59,6 +59,52 @@ tests:
           value:
             - port: api
 
+  - it: lets the web client reach hbbs and hbbs pods reach each other's internal port
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-rustdesk-hbbs
+    asserts:
+      - equal:
+          path: spec.ingress
+          value:
+            - ports:
+                - port: ws
+              from:
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: webclient
+                      app.kubernetes.io/instance: RELEASE-NAME
+            - ports:
+                - port: internal
+              from:
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: hbbs
+                      app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: lets the web client reach hbbr and hbbs poll hbbr's health port
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-rustdesk-hbbr
+    asserts:
+      - equal:
+          path: spec.ingress
+          value:
+            - ports:
+                - port: ws
+              from:
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: webclient
+                      app.kubernetes.io/instance: RELEASE-NAME
+            - ports:
+                - port: health
+              from:
+                - podSelector:
+                    matchLabels:
+                      app.kubernetes.io/name: hbbs
+                      app.kubernetes.io/instance: RELEASE-NAME
+
   - it: omits Postgres and mock policies when those are not deployed
     set:
       postgresql.enabled: false

@@ -224,7 +224,7 @@ Secret apart from offline rendering without cluster-wide permissions.
 
 {{/*
 Ingress-only NetworkPolicy for .component, accepting .port from .from (component
-names) or, without .from, from anywhere.
+names) or, without .from, from anywhere; .extra adds more {port, from} rules.
 */}}
 {{- define "rustdesk.networkPolicy" -}}
 apiVersion: networking.k8s.io/v1
@@ -239,6 +239,7 @@ spec:
       {{- include "rustdesk.selectorLabels" (dict "context" .context "component" .component) | nindent 6 }}
   policyTypes: [Ingress]
   ingress:
+    {{- range prepend (.extra | default list) (dict "port" .port "from" .from) }}
     - ports:
         - port: {{ .port }}
       {{- if .from }}
@@ -249,6 +250,7 @@ spec:
               {{- include "rustdesk.selectorLabels" (dict "context" $.context "component" .) | nindent 14 }}
         {{- end }}
       {{- end }}
+    {{- end }}
 {{- end -}}
 
 {{/*
