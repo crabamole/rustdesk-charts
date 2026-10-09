@@ -238,12 +238,14 @@ tests:
           path: spec.template.spec.terminationGracePeriodSeconds
           value: 60
 
-  - it: waits before stopping so the Service drops the pod first
+  - it: holds nginx until proxied WebSockets end, at most the grace period minus 10 s
     template: templates/webclient-deployment.yaml
+    set:
+      webclient.terminationGracePeriodSeconds: 120
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
-          value: ["sleep", "5"]
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command[2]
+          value: "end=$(($(date +%s) + 110)); sleep 5; while [ $(date +%s) -lt $end ] && netstat -tn | grep -qE ':2111[89] +ESTABLISHED'; do sleep 2; done"
 
   - it: spreads pods over nodes without blocking scheduling
     template: templates/webclient-deployment.yaml

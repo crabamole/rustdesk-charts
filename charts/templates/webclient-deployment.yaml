@@ -85,10 +85,11 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           lifecycle:
-            # Let the Service drop this pod before nginx stops accepting connections.
+            # Hold off SIGQUIT while WebSockets are proxied to hbbs/hbbr: nginx would close its listener,
+            # fail readiness, and Cilium resets the connections of a backend that is no longer serving.
             preStop:
               exec:
-                command: ["sleep", "5"]
+                command: ["sh", "-c", "end=$(($(date +%s) + {{ max (sub .Values.webclient.terminationGracePeriodSeconds 10) 5 }})); sleep 5; while [ $(date +%s) -lt $end ] && netstat -tn | grep -qE ':2111[89] +ESTABLISHED'; do sleep 2; done"]
           ports:
             - name: http
               containerPort: 8080
