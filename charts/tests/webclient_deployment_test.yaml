@@ -212,3 +212,49 @@ tests:
       - equal:
           path: spec.template.metadata.labels.team
           value: frontend
+
+  - it: scales with webclient.replicas
+    template: templates/webclient-deployment.yaml
+    set:
+      webclient.replicas: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+
+  - it: drains proxied sessions for 30 minutes by default
+    template: templates/webclient-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 1800
+
+  - it: takes the grace period from values
+    template: templates/webclient-deployment.yaml
+    set:
+      webclient.terminationGracePeriodSeconds: 60
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+
+  - it: waits before stopping so the Service drops the pod first
+    template: templates/webclient-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["sleep", "5"]
+
+  - it: spreads pods over nodes without blocking scheduling
+    template: templates/webclient-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints
+          value:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: webclient
+                  app.kubernetes.io/instance: RELEASE-NAME

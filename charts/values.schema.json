@@ -84,6 +84,14 @@
       "properties": {
         "image": { "$ref": "#/$defs/image" },
         "replicas": { "type": "integer", "minimum": 1 },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
+        "nginx": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workerConnections": { "type": "integer", "minimum": 512 }
+          }
+        },
         "env": { "type": "object" },
         "resources": { "$ref": "#/$defs/resources" },
         "podAnnotations": { "type": "object" },

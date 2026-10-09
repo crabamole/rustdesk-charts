@@ -8,12 +8,14 @@ data:
   nginx.conf: |
     # Runs as the unprivileged nginx user: port 8080, writable files under /tmp.
     worker_processes  1;
+    # Each proxied WebSocket holds two connections (client and upstream).
+    worker_rlimit_nofile  {{ mul 2 (int .Values.webclient.nginx.workerConnections) }};
 
     error_log  /var/log/nginx/error.log notice;
     pid        /tmp/nginx.pid;
 
     events {
-        worker_connections  1024;
+        worker_connections  {{ int .Values.webclient.nginx.workerConnections }};
     }
 
     http {
@@ -70,6 +72,20 @@ data:
                 proxy_set_header X-Forwarded-For $remote_addr;
                 proxy_read_timeout 300s;
             }
+
+            # hbbs hands out one URL per hbbr pod; both halves of a session must reach that pod.
+            {{- $hbbr := include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
+            {{- range $i := until (int .Values.hbbr.replicas) }}
+            location = /ws/relay/{{ $i }} {
+                proxy_pass http://{{ $hbbr }}-{{ $i }}:21119;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection $connection_upgrade;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_read_timeout 300s;
+            }
+            {{- end }}
 
             location /ws/relay {
                 proxy_pass http://{{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}:21119;

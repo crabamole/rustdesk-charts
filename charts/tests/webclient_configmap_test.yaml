@@ -47,3 +47,46 @@ tests:
       - matchRegex:
           path: data["nginx.conf"]
           pattern: 'set_real_ip_from 10\.244\.0\.0/16;\s+set_real_ip_from 172\.18\.0\.0/16;\s+real_ip_header CF-Connecting-IP;\s+real_ip_recursive on;'
+
+  - it: routes each hbbr pod's relay URL to that pod's Service
+    set:
+      hbbr.replicas: 2
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?s)location = /ws/relay/0 \{\s*proxy_pass http://RELEASE-NAME-rustdesk-hbbr-0:21119;[^}]*proxy_set_header Upgrade \$http_upgrade;[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?s)location = /ws/relay/1 \{\s*proxy_pass http://RELEASE-NAME-rustdesk-hbbr-1:21119;'
+      - notMatchRegex:
+          path: data["nginx.conf"]
+          pattern: 'location = /ws/relay/2 '
+
+  - it: keeps plain /ws/relay on the hbbr Service
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?s)location /ws/relay \{\s*proxy_pass http://RELEASE-NAME-rustdesk-hbbr:21119;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'location = /ws/relay/0 '
+
+  - it: allows 4096 connections per worker by default
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*worker_rlimit_nofile\s+8192;$'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*worker_connections\s+4096;$'
+
+  - it: sizes connections for the fleet from values
+    set:
+      webclient.nginx.workerConnections: 12000
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*worker_rlimit_nofile\s+24000;$'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*worker_connections\s+12000;$'

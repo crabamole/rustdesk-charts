@@ -26,6 +26,9 @@ spec:
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
       # No pod needs the Kubernetes API.
       automountServiceAccountToken: false
+      # nginx stops gracefully (SIGQUIT) and keeps proxied sessions until they end or this runs out.
+      terminationGracePeriodSeconds: {{ .Values.webclient.terminationGracePeriodSeconds }}
+      {{- include "rustdesk.topologySpread" (dict "context" . "component" "webclient") | nindent 6 }}
       {{- with .Values.webclient.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -81,6 +84,11 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault
+          lifecycle:
+            # Let the Service drop this pod before nginx stops accepting connections.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
           ports:
             - name: http
               containerPort: 8080
