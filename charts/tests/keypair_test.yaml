@@ -4,7 +4,7 @@ templates:
   - templates/database-secret.yaml
 set:
   oidcMock.authorizeUrl: https://oidc.example.com
-  hbbs.relayAddress: rustdesk.example.com:443
+  publicHost: rustdesk.example.com
 release:
   namespace: rustdesk
 tests:

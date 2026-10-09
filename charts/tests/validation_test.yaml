@@ -1,6 +1,6 @@
 suite: validation
 set:
-  hbbs.relayAddress: rustdesk.example.com:443
+  publicHost: rustdesk.example.com
 templates:
   - templates/database-secret.yaml
 tests:
@@ -29,13 +29,37 @@ tests:
       - failedTemplate:
           errorPattern: "login is OIDC-only"
 
-  - it: requires hbbs.relayAddress
+  - it: requires publicHost
     set:
       oidcMock.authorizeUrl: https://oidc.example.com
-      hbbs.relayAddress: ""
+      publicHost: ""
     asserts:
       - failedTemplate:
-          errorPattern: "hbbs.relayAddress is required"
+          errorPattern: "publicHost is required"
+
+  - it: rejects the removed hbbs.relayAddress
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      hbbs.relayAddress: rustdesk.example.com:443
+    asserts:
+      - failedTemplate:
+          errorPattern: "hbbs.relayAddress was removed: set publicHost"
+
+  - it: rejects a scheme or path in publicHost
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      publicHost: https://rustdesk.example.com
+    asserts:
+      - failedTemplate:
+          errorPattern: "publicHost"
+
+  - it: rejects more than 32 hbbs pods
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      hbbs.replicas: 33
+    asserts:
+      - failedTemplate:
+          errorPattern: "replicas"
 
   - it: rejects a hand-set RUSTDESK_KEY
     set:

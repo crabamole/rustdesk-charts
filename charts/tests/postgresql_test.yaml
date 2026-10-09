@@ -1,7 +1,7 @@
 suite: postgresql
 set:
   oidcMock.authorizeUrl: https://oidc.example.com
-  hbbs.relayAddress: rustdesk.example.com:443
+  publicHost: rustdesk.example.com
 templates:
   - templates/postgresql-statefulset.yaml
   - templates/postgresql-service.yaml

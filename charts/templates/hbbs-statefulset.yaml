@@ -1,17 +1,15 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}
   labels:
     {{- include "rustdesk.labels" (dict "context" . "component" "hbbs") | nindent 4 }}
 spec:
-  replicas: 1
-  # Single instance (in-memory state, see README); roll over without a gap.
-  strategy:
+  replicas: {{ .Values.hbbs.replicas }}
+  serviceName: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}-hl
+  podManagementPolicy: OrderedReady
+  updateStrategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbs") | nindent 6 }}
@@ -33,6 +31,7 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
+      {{- include "rustdesk.topologySpread" (dict "context" . "component" "hbbs") | nindent 6 }}
       {{- with .Values.hbbs.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -51,14 +50,15 @@ spec:
           imagePullPolicy: {{ .Values.hbbs.image.pullPolicy }}
           command: {{ .Values.hbbs.command | toJson }}
           workingDir: /data
-          {{- if .Values.hbbs.relayAddress }}
-          args:
-            - "-r"
-            - {{ .Values.hbbs.relayAddress | quote }}
-          {{- end }}
           {{- /* runs as uid 1000, which has no home; HOME=/ is read-only */}}
           {{- $hbbsEnv := list (dict "name" "HOME" "value" "/data") }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "API_SERVER" "value" (printf "http://%s:21114" (include "rustdesk.componentName" (dict "context" . "component" "apiserver")))) }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "POD_NAME" "valueFrom" (dict "fieldRef" (dict "fieldPath" "metadata.name"))) }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "POD_IP" "valueFrom" (dict "fieldRef" (dict "fieldPath" "status.podIP"))) }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "INTERNAL_PORT" "value" "21120") }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "HEALTH_PORT" "value" "21121") }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_URLS" "value" (include "rustdesk.relayUrls" .)) }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_CHECKS" "value" (include "rustdesk.relayChecks" .)) }}
             {{- range $key, $value := .Values.hbbs.env }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}
             {{- end }}
@@ -84,21 +84,37 @@ spec:
             - name: ws
               containerPort: 21118
               protocol: TCP
+            - name: internal
+              containerPort: 21120
+              protocol: TCP
+            - name: health
+              containerPort: 21121
+              protocol: TCP
           startupProbe:
-            tcpSocket:
-              port: ws
+            httpGet:
+              path: /livez
+              port: health
             periodSeconds: 5
             failureThreshold: 60
           livenessProbe:
-            tcpSocket:
-              port: ws
-            initialDelaySeconds: 5
-            periodSeconds: 30
-          readinessProbe:
-            tcpSocket:
-              port: ws
-            initialDelaySeconds: 3
+            httpGet:
+              path: /livez
+              port: health
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 2
+          lifecycle:
+            # Devices hbbs disconnects on SIGTERM must reconnect to another pod.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
           volumeMounts:
             - name: data
               mountPath: /data

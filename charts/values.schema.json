@@ -4,6 +4,7 @@
   "properties": {
     "nameOverride": { "type": "string" },
     "fullnameOverride": { "type": "string" },
+    "publicHost": { "type": "string", "pattern": "^[^/\\s]*$" },
     "global": {
       "type": "object",
       "properties": {
@@ -32,7 +33,7 @@
       "properties": {
         "image": { "$ref": "#/$defs/image" },
         "command": { "type": "array", "items": { "type": "string" } },
-        "relayAddress": { "type": "string" },
+        "replicas": { "type": "integer", "minimum": 1, "maximum": 32 },
         "env": { "type": "object" },
         "oauth2": {
           "type": "object",

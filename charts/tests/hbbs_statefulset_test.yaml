@@ -1,20 +1,29 @@
-suite: hbbs deployment
+suite: hbbs statefulset
 templates:
-  - templates/hbbs-deployment.yaml
+  - templates/hbbs-statefulset.yaml
+set:
+  publicHost: rustdesk.example.com
 tests:
   - it: renders with default values
     asserts:
       - isKind:
-          of: Deployment
+          of: StatefulSet
       - equal:
           path: metadata.name
           value: RELEASE-NAME-rustdesk-hbbs
       - equal:
-          path: spec.strategy.type
-          value: RollingUpdate
+          path: spec.replicas
+          value: 1
       - equal:
-          path: spec.strategy.rollingUpdate.maxUnavailable
-          value: 0
+          path: spec.serviceName
+          value: RELEASE-NAME-rustdesk-hbbs-hl
+      - equal:
+          path: spec.podManagementPolicy
+          value: OrderedReady
+      - equal:
+          path: spec.updateStrategy
+          value:
+            type: RollingUpdate
       - equal:
           path: spec.template.spec.securityContext.fsGroup
           value: 1000
@@ -70,21 +79,93 @@ tests:
           path: spec.template.spec.containers[0].image
           value: registry.example.com/crabamole/rustdesk-server:1.1.16-3
 
-  - it: sets relay address args
+  - it: scales with hbbs.replicas
     set:
-      hbbs.relayAddress: relay.example.com
+      hbbs.replicas: 3
     asserts:
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: "-r"
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: relay.example.com
+      - equal:
+          path: spec.replicas
+          value: 3
 
-  - it: omits args when relay address is empty
+  - it: passes no -r flag (RELAY_URLS replaces it)
     asserts:
       - isNull:
           path: spec.template.spec.containers[0].args
+
+  - it: hands out one relay URL per hbbr pod and polls each pod's readiness
+    set:
+      hbbr.replicas: 2
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RELAY_URLS
+            value: wss://rustdesk.example.com/ws/relay/0,wss://rustdesk.example.com/ws/relay/1
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RELAY_CHECKS
+            value: http://RELEASE-NAME-rustdesk-hbbr-0:21122/readyz,http://RELEASE-NAME-rustdesk-hbbr-1:21122/readyz
+
+  - it: keeps the port of publicHost in the relay URLs
+    set:
+      publicHost: rustdesk.example.com:8443
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RELAY_URLS
+            value: wss://rustdesk.example.com:8443/ws/relay/0
+
+  - it: uses ws:// when PUBLIC_URL is plain http
+    set:
+      apiserver.env.PUBLIC_URL: http://rustdesk.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RELAY_URLS
+            value: ws://rustdesk.example.com/ws/relay/0
+
+  - it: tells hbbs its pod name, pod IP and ports
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: INTERNAL_PORT
+            value: "21120"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HEALTH_PORT
+            value: "21121"
+
+  - it: spreads pods over nodes without blocking scheduling
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints
+          value:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: hbbs
+                  app.kubernetes.io/instance: RELEASE-NAME
 
   - it: renders environment variables
     asserts:
@@ -161,9 +242,21 @@ tests:
             name: ws
             containerPort: 21118
             protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: internal
+            containerPort: 21120
+            protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: health
+            containerPort: 21121
+            protocol: TCP
       - lengthEqual:
           path: spec.template.spec.containers[0].ports
-          count: 1
+          count: 3
 
   - it: mounts keypair and data volumes
     asserts:
@@ -298,14 +391,26 @@ tests:
             name: oauth2
           any: true
 
-  - it: hbbs container has liveness and readiness probes
+  - it: restarts on /livez and leaves the Service on /readyz
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
-          value: ws
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
       - equal:
-          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
-          value: ws
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 2
 
   - it: has exactly one container and no PVC
     asserts:
@@ -331,12 +436,19 @@ tests:
             name: API_SERVER
             value: http://RELEASE-NAME-rustdesk-apiserver:21114
 
-  - it: has a TCP startup probe on ws
+  - it: waits before draining so the Service drops the pod first
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["sleep", "5"]
+
+  - it: waits up to 5 minutes for /livez at startup
     asserts:
       - equal:
           path: spec.template.spec.containers[0].startupProbe
           value:
-            tcpSocket:
-              port: ws
+            httpGet:
+              path: /livez
+              port: health
             periodSeconds: 5
             failureThreshold: 60

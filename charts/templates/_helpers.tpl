@@ -183,8 +183,11 @@ Login is OIDC-only and the api-server refuses to start without a provider file.
 Settings the web client and hbbs cannot work without.
 */}}
 {{- define "rustdesk.validateClientSettings" -}}
-{{- if not .Values.hbbs.relayAddress -}}
-{{- fail "hbbs.relayAddress is required: the public host:port clients reach hbbr through (e.g. rustdesk.example.com:443)" -}}
+{{- if hasKey .Values.hbbs "relayAddress" -}}
+{{- fail "hbbs.relayAddress was removed: set publicHost instead (see UPGRADING.md)" -}}
+{{- end -}}
+{{- if not .Values.publicHost -}}
+{{- fail "publicHost is required: the host[:port] clients reach the web client through (e.g. rustdesk.example.com)" -}}
 {{- end -}}
 {{- if .Values.webclient.env.RUSTDESK_KEY -}}
 {{- fail "webclient.env.RUSTDESK_KEY is no longer used: the web client reads the public key from the keypair Secret; remove it" -}}
@@ -270,4 +273,30 @@ topologySpreadConstraints:
     labelSelector:
       matchLabels:
         {{- include "rustdesk.selectorLabels" . | nindent 8 }}
+{{- end -}}
+
+{{/*
+Public relay URLs hbbs hands out, one per hbbr pod: wss://<publicHost>/ws/relay/<n>
+(ws:// when apiserver.env.PUBLIC_URL is plain http).
+*/}}
+{{- define "rustdesk.relayUrls" -}}
+{{- $publicUrl := index (.Values.apiserver.env | default dict) "PUBLIC_URL" | default "" -}}
+{{- $scheme := ternary "ws" "wss" (hasPrefix "http://" $publicUrl) -}}
+{{- $urls := list -}}
+{{- range $i := until (int .Values.hbbr.replicas) -}}
+{{- $urls = append $urls (printf "%s://%s/ws/relay/%d" $scheme $.Values.publicHost $i) -}}
+{{- end -}}
+{{- join "," $urls -}}
+{{- end -}}
+
+{{/*
+hbbr readiness URLs hbbs polls, in the same order as rustdesk.relayUrls.
+*/}}
+{{- define "rustdesk.relayChecks" -}}
+{{- $name := include "rustdesk.componentName" (dict "context" . "component" "hbbr") -}}
+{{- $urls := list -}}
+{{- range $i := until (int .Values.hbbr.replicas) -}}
+{{- $urls = append $urls (printf "http://%s-%d:21122/readyz" $name $i) -}}
+{{- end -}}
+{{- join "," $urls -}}
 {{- end -}}

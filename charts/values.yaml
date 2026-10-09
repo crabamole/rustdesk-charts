@@ -6,6 +6,11 @@ global:
   # Secrets for pulling from a private registry, e.g. [{name: corp-registry}].
   imagePullSecrets: []
 
+# Required: public host[:port] clients reach the web client through (e.g. rustdesk.example.com).
+# hbbs hands out wss://<publicHost>/ws/relay/<n>, one URL per hbbr pod
+# (ws:// when apiserver.env.PUBLIC_URL starts with http://).
+publicHost: ""
+
 keypair:
   secretName: rustdesk-keypair
   privateKeyKey: id_ed25519
@@ -18,8 +23,8 @@ hbbs:
     tag: "1.1.16-3"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
-  # Required: public host:port clients reach hbbr through (e.g. rustdesk.example.com:443).
-  relayAddress: ""
+  # Devices spread over the pods; at most 32 (the pod ordinal travels in 5 bits).
+  replicas: 1
   env:
     ALWAYS_USE_RELAY: "Y"
     # Only logged-in (OIDC) users may start connections; the api-server validates their session.
