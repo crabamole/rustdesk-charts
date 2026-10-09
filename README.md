@@ -51,9 +51,8 @@ helm install rustdesk ./charts -n rustdesk -f values-override.yaml
 Create a `values-override.yaml` with your deployment-specific settings:
 
 ```yaml
-hbbs:
-  # Required: public host:port clients reach hbbr through.
-  relayAddress: "rustdesk.example.com:443"
+# Required: the host clients reach the web client through (add :<port> if not 443).
+publicHost: "rustdesk.example.com"
 
 # Quickstart only: the bundled OIDC mock, reachable by browsers at this URL.
 # For production, disable it and use your IdP (see "OIDC provider").
@@ -83,12 +82,13 @@ routes `/ws/id`, `/ws/relay`, `/api` and `/ui` itself:
 | Path | Backend |
 |------|---------|
 | `/ws/id` | hbbs:21118 (WebSocket) |
-| `/ws/relay` | hbbr:21119 (WebSocket) |
+| `/ws/relay/<n>` | hbbr pod `<n>`:21119 (WebSocket), one path per pod |
+| `/ws/relay` | any hbbr pod:21119 (WebSocket) |
 | `/api/`, `/ui` | api-server |
 | `/` | web client |
 
 So exposing the chart takes a single rule sending your host to that Service; set
-`hbbs.relayAddress` to `<host>:443`. The chart can create an Ingress for you, for example with
+`publicHost` to `<host>`. The chart can create an Ingress for you, for example with
 ingress-nginx and cert-manager:
 
 ```yaml
@@ -112,16 +112,20 @@ keep the `Host` header and allow long-lived WebSockets.
 ### Client settings and ports
 
 Clients reach everything through that one host, so their WebSocket URLs are
-`wss://<host>/ws/id` and `wss://<host>/ws/relay` (or `ws://` on port 80):
+`wss://<host>/ws/id` and, for relayed sessions, the `wss://<host>/ws/relay/<n>` URL hbbs
+hands out (or `ws://` on port 80):
 
-- Set `custom-rendezvous-server` to `<host>` **without a port**, `api-server` to
-  `https://<host>`, and leave `relay-server` empty (hbbs hands out `hbbs.relayAddress`).
+- Set `custom-rendezvous-server` to `<host>` **without a port** and `api-server` to
+  `https://<host>`. The relay is always the one hbbs hands out: cRustDesk has no relay
+  setting; on stock clients leave `relay-server` empty.
+- hbbs hands out `wss://` URLs. For a plain-HTTP service set `apiserver.env.PUBLIC_URL`
+  to `http://<host>`; hbbs then hands out `ws://` ones.
 - Stock RustDesk clients only use WebSocket on 443 (wss, chosen by an `https` api-server)
   or 80 (ws), and drop any other port. Writing `<host>:443` as the rendezvous server
   makes them send relayed sessions to `/ws/id`, so those sessions fail.
 - The [cRustDesk builds](https://github.com/crabamole/rustdesk) also support another
   port `P`: set `custom-rendezvous-server` to `<host>:P`, `api-server` to
-  `http(s)://<host>:P`, and `hbbs.relayAddress` to `<host>:P`; all three must carry
+  `http(s)://<host>:P`, and `publicHost` to `<host>:P`; all three must carry
   the same port.
 
 The api-server builds its OIDC callback URL from the request's `Host` (or
@@ -134,34 +138,67 @@ apiserver:
     PUBLIC_URL: https://rustdesk.example.com
 ```
 
-## Single instance
+## Replicas and availability
 
-hbbs, hbbr and the api-server each run one pod. Postgres holds the durable data,
-but each also keeps live state in memory that a second pod would not see:
+hbbs, hbbr, the api-server and the web client each scale with `replicas` (`hbbs.replicas`,
+`hbbr.replicas`, `apiserver.replicas`, `webclient.replicas`; default 1). With two or more of
+each, losing a pod or draining a node does not take remote access down:
 
-- hbbs: the open connection of every registered device; a request landing on
-  another pod could find the device in Postgres but not reach it.
-- hbbr: the two halves of each relayed session must meet in the same pod.
-- api-server: OIDC login sessions (a login spans several requests) and a
-  write-back address book cache.
+- **hbbs** (StatefulSet, at most 32 pods): each device keeps one connection to one pod. The
+  pods record in Postgres which pod holds which device and pass session setup to that pod
+  over an internal port (21120). Devices on a lost pod reconnect to another within about 30 s.
+- **hbbr** (StatefulSet): hbbs hands out one URL per pod, `wss://<publicHost>/ws/relay/<n>`,
+  and the web client routes each to its pod, so both halves of a session meet there. hbbs
+  hands out only pods whose `/readyz` answers.
+- **api-server** (Deployment): keeps no state of its own.
+- **web client** (Deployment): its nginx proxies every WebSocket. Changing `hbbr.replicas`
+  restarts it, since its config lists one location per hbbr pod.
 
-Upgrades roll over without a gap (`RollingUpdate`, surge 1). For a few seconds
-both pods run: a connection attempt or an OIDC login in flight may need a retry.
-Running more replicas is a goal but needs changes in the servers first.
+Rolling updates replace one pod at a time:
+
+| Component | During its update |
+|-----------|-------------------|
+| hbbs | Devices on the stopping pod reconnect at once to the others; running sessions are not affected. |
+| hbbr | The stopping pod takes no new sessions and relays its running ones until they end or `hbbr.terminationGracePeriodSeconds` (default 1800 s) runs out; those viewers then reconnect. Updating every pod can take replicas x the grace period. |
+| api-server | A 5 s pause before stopping lets the Service drop the pod first. |
+| web client | nginx stops gracefully and keeps proxied sessions for up to `webclient.terminationGracePeriodSeconds` (default 1800 s). |
+
+hbbs serves `/livez` and `/readyz` on port 21121, hbbr on 21122, the api-server on its API
+port. A pod whose `/readyz` fails (database unreachable, shutting down) leaves the Service;
+one whose `/livez` fails is restarted.
+
+With two or more replicas a component gets a PodDisruptionBudget (one pod down at a time).
+Pods of each component are spread over nodes when the scheduler can (`ScheduleAnyway`).
+hbbs registration limits and hbbr bandwidth limits apply per pod, so the effective limit is
+the setting times the number of pods.
+
+hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes device
+connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
+before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 15 always ends in a kill.
+
+### Sizing
+
+Every device keeps one WebSocket open through the web client, and every session adds two
+more (viewer and device to hbbr). nginx counts each proxied WebSocket twice (client and
+upstream), so one web client pod carries about `webclient.nginx.workerConnections / 2`
+(default 4096 / 2) devices and sessions. For a large fleet raise `workerConnections` or
+`webclient.replicas`, and raise `webclient.resources` and `hbbs.resources` memory with it:
+the defaults (64Mi, 128Mi) are sized for a few hundred devices.
 
 ## Network policies and service account
 
 By default the chart adds ingress-only NetworkPolicies: Postgres accepts only hbbs
-and the api-server; the api-server only the web client and hbbs; hbbs and hbbr only
-the web client. The web client (and the OIDC mock) accept any source, so your
-ingress controller or gateway needs no extra rules. Egress is not restricted.
+and the api-server; the api-server only the web client and hbbs; hbbs and hbbr the
+web client on their WebSocket ports, plus hbbs pods on hbbs's internal port (21120) and
+hbbr's health port (21122). The web client (and the OIDC mock) accept any source, so your
+ingress controller or gateway needs no extra rules. Egress is not restricted. Kubelet
+probes come from the pod's own node, which NetworkPolicy does not block.
 Disable with `networkPolicy.enabled: false`; they need a CNI that enforces
 NetworkPolicy (Calico, Cilium, ...).
 
 All pods run under one ServiceAccount with no API token mounted (none of them
 talks to the Kubernetes API). Set `serviceAccount.create: false` and
-`serviceAccount.name` to use an existing one. There is no PodDisruptionBudget: with
-a single replica each, a PDB would block node drains.
+`serviceAccount.name` to use an existing one.
 
 ## Service mesh (Istio)
 
@@ -363,6 +400,27 @@ kubectl delete secret <fullname>-postgresql -n <namespace>
 (`<fullname>` is normally `<release>` when the release name already contains
 `rustdesk`, or `<release>-rustdesk` otherwise — see `rustdesk.fullname` in
 `templates/_helpers.tpl`, or run `helm template` and check the object names.)
+
+## Disaster recovery
+
+Not verified yet. Durable state is Postgres, the keypair Secret and the OIDC provider
+Secret; which device is on which hbbs pod is rebuilt as devices reconnect. A standby site
+needs:
+
+- a replica of the database (your provider's replication), used as an external database
+  (`postgresql.enabled: false`, `database.url` pointing at the replica);
+- the same keypair Secret and OIDC provider Secret;
+- the same `publicHost`, with the IdP redirect URI on it;
+- the chart installed with the same values, then scaled to zero:
+
+```bash
+kubectl scale -n rustdesk statefulset/rustdesk-hbbs statefulset/rustdesk-hbbr \
+  deploy/rustdesk-apiserver deploy/rustdesk-webclient --replicas=0
+```
+
+To fail over, promote the replica, run `helm upgrade` with the same values (it restores the
+replica counts), and point DNS at the standby. Devices register with it when their
+connections drop; users log in again only if their sessions had not been replicated yet.
 
 ## Upgrading
 
