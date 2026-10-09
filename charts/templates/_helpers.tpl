@@ -186,9 +186,6 @@ Settings the web client and hbbs cannot work without.
 {{- if not .Values.hbbs.relayAddress -}}
 {{- fail "hbbs.relayAddress is required: the public host:port clients reach hbbr through (e.g. rustdesk.example.com:443)" -}}
 {{- end -}}
-{{- if hasKey .Values.hbbr "replicas" -}}
-{{- fail "hbbr.replicas was removed: hbbr runs as a single instance (see README 'Single instance')" -}}
-{{- end -}}
 {{- if .Values.webclient.env.RUSTDESK_KEY -}}
 {{- fail "webclient.env.RUSTDESK_KEY is no longer used: the web client reads the public key from the keypair Secret; remove it" -}}
 {{- end -}}
@@ -260,4 +257,17 @@ Service account used by every pod.
 {{- else -}}
 {{- default "default" .Values.serviceAccount.name -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Spread a component's pods over nodes, without blocking scheduling when it can't.
+*/}}
+{{- define "rustdesk.topologySpread" -}}
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        {{- include "rustdesk.selectorLabels" . | nindent 8 }}
 {{- end -}}

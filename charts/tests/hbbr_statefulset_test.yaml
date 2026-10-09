@@ -1,11 +1,11 @@
-suite: hbbr deployment
+suite: hbbr statefulset
 templates:
-  - templates/hbbr-deployment.yaml
+  - templates/hbbr-statefulset.yaml
 tests:
   - it: renders with default values
     asserts:
       - isKind:
-          of: Deployment
+          of: StatefulSet
       - equal:
           path: metadata.name
           value: RELEASE-NAME-rustdesk-hbbr
@@ -46,18 +46,61 @@ tests:
           path: spec.template.spec.containers[0].image
           value: registry.example.com/crabamole/rustdesk-server:1.1.16-3
 
-  - it: runs a single instance and rolls over without a gap
+  - it: is a StatefulSet governed by the headless Service, replaced one pod at a time
+    asserts:
+      - equal:
+          path: spec.serviceName
+          value: RELEASE-NAME-rustdesk-hbbr-hl
+      - equal:
+          path: spec.podManagementPolicy
+          value: OrderedReady
+      - equal:
+          path: spec.updateStrategy
+          value:
+            type: RollingUpdate
+
+  - it: scales with hbbr.replicas
+    set:
+      hbbr.replicas: 3
     asserts:
       - equal:
           path: spec.replicas
-          value: 1
+          value: 3
+
+  - it: drains for 30 minutes by default
+    asserts:
       - equal:
-          path: spec.strategy
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 1800
+
+  - it: takes the grace period from values
+    set:
+      hbbr.terminationGracePeriodSeconds: 60
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 60
+
+  - it: tells hbbr its health port
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HEALTH_PORT
+            value: "21122"
+
+  - it: spreads pods over nodes without blocking scheduling
+    asserts:
+      - equal:
+          path: spec.template.spec.topologySpreadConstraints
           value:
-            type: RollingUpdate
-            rollingUpdate:
-              maxSurge: 1
-              maxUnavailable: 0
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: hbbr
+                  app.kubernetes.io/instance: RELEASE-NAME
 
   - it: runs as a non-root user with a writable /data home
     asserts:
@@ -107,9 +150,15 @@ tests:
             name: ws
             containerPort: 21119
             protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: health
+            containerPort: 21122
+            protocol: TCP
       - lengthEqual:
           path: spec.template.spec.containers[0].ports
-          count: 1
+          count: 2
 
   - it: sets container security context
     asserts:
@@ -164,14 +213,34 @@ tests:
       - isNull:
           path: spec.template.metadata.annotations
 
-  - it: has liveness and readiness probes
+  - it: probes /livez and /readyz on the health port
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
-          value: ws
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 2
+            failureThreshold: 30
       - equal:
-          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
-          value: ws
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 2
 
   - it: renders pod labels
     set:

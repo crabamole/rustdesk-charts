@@ -50,6 +50,10 @@ hbbr:
     tag: "1.1.16-3"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
+  # One public URL per pod (wss://<publicHost>/ws/relay/<n>); hbbs picks a ready one.
+  replicas: 1
+  # A stopping pod keeps relaying running sessions until they end or this runs out.
+  terminationGracePeriodSeconds: 1800
   podAnnotations: {}
   podLabels: {}
   nodeSelector: {}

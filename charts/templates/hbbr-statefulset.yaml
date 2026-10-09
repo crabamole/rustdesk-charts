@@ -1,17 +1,15 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
   labels:
     {{- include "rustdesk.labels" (dict "context" . "component" "hbbr") | nindent 4 }}
 spec:
-  replicas: 1
-  # Single instance (in-memory state, see README); roll over without a gap.
-  strategy:
+  replicas: {{ .Values.hbbr.replicas }}
+  serviceName: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}-hl
+  podManagementPolicy: OrderedReady
+  updateStrategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbr") | nindent 6 }}
@@ -33,6 +31,9 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
+      # A stopping pod keeps relaying its running sessions until they end or this runs out.
+      terminationGracePeriodSeconds: {{ .Values.hbbr.terminationGracePeriodSeconds }}
+      {{- include "rustdesk.topologySpread" (dict "context" . "component" "hbbr") | nindent 6 }}
       {{- with .Values.hbbr.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -55,6 +56,8 @@ spec:
             {{- /* runs as uid 1000, which has no home; HOME=/ is read-only */}}
             - name: HOME
               value: /data
+            - name: HEALTH_PORT
+              value: "21122"
             {{- range $key, $value := .Values.hbbr.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -76,16 +79,29 @@ spec:
             - name: ws
               containerPort: 21119
               protocol: TCP
+            - name: health
+              containerPort: 21122
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: health
+            periodSeconds: 2
+            failureThreshold: 30
           livenessProbe:
-            tcpSocket:
-              port: ws
-            initialDelaySeconds: 5
-            periodSeconds: 30
-          readinessProbe:
-            tcpSocket:
-              port: ws
-            initialDelaySeconds: 3
+            httpGet:
+              path: /livez
+              port: health
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 2
           volumeMounts:
             - name: data
               mountPath: /data

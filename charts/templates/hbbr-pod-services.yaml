@@ -1,0 +1,26 @@
+{{- /* One Service per hbbr pod: nginx routes /ws/relay/<n> and hbbs health-checks through it.
+       Not-ready pods stay published so a draining pod still takes the sessions it was handed. */}}
+{{- $name := include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
+{{- range $i := until (int .Values.hbbr.replicas) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-{{ $i }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" $ "component" "hbbr") | nindent 4 }}
+spec:
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "rustdesk.selectorLabels" (dict "context" $ "component" "hbbr") | nindent 4 }}
+    statefulset.kubernetes.io/pod-name: {{ $name }}-{{ $i }}
+  ports:
+    - name: ws
+      port: 21119
+      targetPort: ws
+      protocol: TCP
+    - name: health
+      port: 21122
+      targetPort: health
+      protocol: TCP
+{{- end }}

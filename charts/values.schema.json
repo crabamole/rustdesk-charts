@@ -68,6 +68,8 @@
       "properties": {
         "image": { "$ref": "#/$defs/image" },
         "command": { "type": "array", "items": { "type": "string" } },
+        "replicas": { "type": "integer", "minimum": 1 },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
         "env": { "type": "object" },
         "resources": { "$ref": "#/$defs/resources" },
         "podAnnotations": { "type": "object" },

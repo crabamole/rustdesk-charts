@@ -1,0 +1,20 @@
+# Governing Service of the StatefulSet (stable pod DNS names).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}-hl
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "hbbr") | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "rustdesk.selectorLabels" (dict "context" . "component" "hbbr") | nindent 4 }}
+  ports:
+    - name: ws
+      port: 21119
+      targetPort: ws
+      protocol: TCP
+    - name: health
+      port: 21122
+      targetPort: health
+      protocol: TCP

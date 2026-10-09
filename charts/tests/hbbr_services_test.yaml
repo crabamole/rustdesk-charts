@@ -1,0 +1,61 @@
+suite: hbbr services
+templates:
+  - templates/hbbr-headless-service.yaml
+  - templates/hbbr-pod-services.yaml
+tests:
+  - it: renders a headless governing Service
+    template: templates/hbbr-headless-service.yaml
+    asserts:
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-hbbr-hl
+      - equal:
+          path: spec.clusterIP
+          value: None
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: hbbr
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: renders one Service per pod
+    template: templates/hbbr-pod-services.yaml
+    set:
+      hbbr.replicas: 3
+    asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-rustdesk-hbbr-2
+        documentIndex: 2
+      - equal:
+          path: spec.selector["statefulset.kubernetes.io/pod-name"]
+          value: RELEASE-NAME-rustdesk-hbbr-2
+        documentIndex: 2
+
+  - it: publishes not-ready pods on the relay and health ports
+    template: templates/hbbr-pod-services.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.publishNotReadyAddresses
+          value: true
+      - equal:
+          path: spec.ports
+          value:
+            - name: ws
+              port: 21119
+              targetPort: ws
+              protocol: TCP
+            - name: health
+              port: 21122
+              targetPort: health
+              protocol: TCP
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: hbbr
+            app.kubernetes.io/instance: RELEASE-NAME
+            statefulset.kubernetes.io/pod-name: RELEASE-NAME-rustdesk-hbbr-0
