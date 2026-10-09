@@ -5,8 +5,7 @@ metadata:
   labels:
     {{- include "rustdesk.labels" (dict "context" . "component" "apiserver") | nindent 4 }}
 spec:
-  replicas: 1
-  # Single instance (in-memory state, see README); roll over without a gap.
+  replicas: {{ .Values.apiserver.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -35,6 +34,9 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
+      # Must exceed the preStop pause plus Rocket's 15 s drain of in-flight requests.
+      terminationGracePeriodSeconds: 30
+      {{- include "rustdesk.topologySpread" (dict "context" . "component" "apiserver") | nindent 6 }}
       {{- with .Values.apiserver.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -84,28 +86,36 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault
+          lifecycle:
+            # Let the Service drop this pod before the server stops accepting requests.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
           ports:
             - name: api
               containerPort: {{ .Values.apiserver.port | default 21114 }}
               protocol: TCP
           startupProbe:
             httpGet:
-              path: /api/login-options
+              path: /livez
               port: api
             periodSeconds: 5
+            timeoutSeconds: 5
             failureThreshold: 60
           livenessProbe:
             httpGet:
-              path: /api/login-options
+              path: /livez
               port: api
-            initialDelaySeconds: 10
-            periodSeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /api/login-options
+              path: /readyz
               port: api
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 2
           volumeMounts:
             - name: data
               mountPath: /data

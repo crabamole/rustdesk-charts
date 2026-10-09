@@ -172,6 +172,7 @@ oidcMock:
 
 apiserver:
   port: 21114
+  replicas: 1
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-api

@@ -102,6 +102,12 @@
         "tolerations": { "type": "array" }
       }
     },
+    "apiserver": {
+      "type": "object",
+      "properties": {
+        "replicas": { "type": "integer", "minimum": 1 }
+      }
+    },
     "oidcMock": {
       "type": "object",
       "properties": {
