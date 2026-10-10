@@ -77,13 +77,12 @@ The chart's default images:
 ## Exposing it
 
 Everything goes through the web client Service (port 80): it serves the web app and
-routes `/ws/id`, `/ws/relay`, `/api` and `/ui` itself:
+routes `/ws/id`, `/ws/relay/<n>`, `/api` and `/ui` itself:
 
 | Path | Backend |
 |------|---------|
 | `/ws/id` | hbbs:21118 (WebSocket) |
 | `/ws/relay/<n>` | hbbr pod `<n>`:21119 (WebSocket), one path per pod |
-| `/ws/relay` | any hbbr pod:21119 (WebSocket) |
 | `/api/`, `/ui` | api-server |
 | `/` | web client |
 

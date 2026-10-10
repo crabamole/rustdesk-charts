@@ -7,6 +7,12 @@ Collected for the joint release; they move into UPGRADING.md then.
   (`wss://<publicHost>/ws/relay/<n>`); only this chart's web client routes those paths, and
   only the matching clients dial the relay hbbs hands out. A stock client with
   `relay-server` set pairs only one time in N.
+- **No plain `/ws/relay` and no shared hbbr Service.** Every relay path names its pod
+  (`/ws/relay/<n>`), and clients only dial the relay hbbs hands out. Drop any fixed relay
+  address: a client's `relay-server`, `webclient.env.RUSTDESK_RELAY` (the web client no
+  longer reads it), or a proxy or script pointing at `/ws/relay` or `<fullname>-hbbr:21119`.
+- **hbbs refuses to start without `RELAY_URLS`.** The chart always sets it; this matters
+  only when running hbbs yourself.
 - **`hbbs.relayAddress` is removed; use top-level `publicHost`.** Set it to the host
   clients use, without `:443` (keep another port, e.g. `rustdesk.example.com:8443`). The
   chart refuses to render while `hbbs.relayAddress` is set. hbbs hands out `wss://` URLs,
