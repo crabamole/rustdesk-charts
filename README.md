@@ -186,9 +186,17 @@ upstream), so one web client pod carries about `webclient.nginx.workerConnection
 the defaults (64Mi, 128Mi) are sized for a few hundred devices.
 
 When an hbbs pod stops, all of its devices register again on the other pods within about a
-second. With a few thousand devices, Postgres's default 1 CPU limit throttles that burst for
-seconds; 5000 devices were tested with `postgresql.resources.limits.cpu: "2"`. The web client
-queues up to `workerConnections` pending connections, capped by the node's `net.core.somaxconn`.
+second, and each registration reads and writes Postgres. Measured rolling restarts of hbbs
+(two pods each):
+
+| Devices | `postgresql.resources.limits.cpu` | Devices unreachable for at most |
+|---|---|---|
+| 200 | 1 (default) | 0.5 s |
+| 5000 | 1 (default) | 7-8.5 s (Postgres throttled) |
+| 5000 | 2 | 3-3.5 s (same without a limit) |
+
+The web client queues up to `workerConnections` pending connections and hbbs up to 4096,
+both capped by `net.core.somaxconn` in the pod (4096 on current kernels).
 
 ## Network policies and service account
 
