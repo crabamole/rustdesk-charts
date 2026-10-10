@@ -163,7 +163,7 @@ Rolling updates replace one pod at a time:
 | web client | The stopping pod takes no new connections and keeps relaying its sessions until they end or `webclient.terminationGracePeriodSeconds` (default 1800 s) minus 10 s runs out; nginx then stops and its devices reconnect to the other pods. Updating every pod can take replicas x the grace period. |
 
 hbbs serves `/livez` and `/readyz` on port 21121, hbbr on 21122, the api-server on its API
-port. A pod whose `/readyz` fails leaves the Service: shutting down for all three, and the
+port. A pod whose `/readyz` fails leaves the Service: shutting down for hbbs and hbbr, and the
 database unreachable for the api-server (hbbs keeps its devices through a database outage); one
 whose `/livez` fails is restarted.
 
@@ -174,7 +174,7 @@ the setting times the number of pods.
 
 hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes device
 connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
-before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin.
+before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin. The same holds for `webclient.terminationGracePeriodSeconds`: its `preStop` (5 s pause, then the hold) can outlast a grace period under 15.
 
 ### Sizing
 
