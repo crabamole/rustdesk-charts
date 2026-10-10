@@ -3,6 +3,26 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.9.0
+
+0.9.0 ships rustdesk-server 1.1.16-4, rustdesk-api 3.5.0 and web client 1.4.9-9. It runs hbbs,
+hbbr, the api-server and the web client as several replicas (see
+[Replicas and availability](README.md#replicas-and-availability)).
+
+- **Upgrade everything together, native clients included (cRustDesk 1.4.9-9).** hbbs now hands
+  out the relay, one URL per hbbr pod, and clients dial only that URL; older clients and older
+  hbbs or api-server images do not work with this release.
+- **Set `publicHost`; `hbbs.relayAddress` is gone.** `publicHost` is the host[:port] clients reach
+  the web client through. hbbs hands out `wss://<publicHost>/ws/relay/<n>` (`ws://` when
+  `apiserver.env.PUBLIC_URL` starts with `http://`). The plain `/ws/relay` route is removed.
+- **Clients drop any fixed relay address.** Our clients no longer have a relay setting; stock
+  clients must leave "Relay Server" empty. Running hbbs without the chart, set `RELAY_URLS` to
+  `ws://` or `wss://` URLs; hbbs refuses to start otherwise.
+- **hbbs and hbbr become StatefulSets.** Helm replaces the old Deployments, so devices reconnect
+  and running sessions are cut once during this upgrade.
+- **The api-server's database migrations are one-way** (0009–0014: login audit, hbbs presence,
+  audit binding). Back up the database first if you may need to roll back.
+
 ## 0.8.0
 
 0.8.0 ships rustdesk-api 3.4.0 and web client 1.4.9-8 (rustdesk-server 1.1.16-3 unchanged).
