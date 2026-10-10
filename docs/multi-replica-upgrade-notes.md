@@ -6,14 +6,19 @@ Collected for the joint release; they move into UPGRADING.md then.
   and the native clients. hbbs hands out one relay URL per hbbr pod
   (`wss://<publicHost>/ws/relay/<n>`); only this chart's web client routes those paths, and
   only the matching clients dial the relay hbbs hands out. A stock client with
-  `relay-server` set pairs only one time in N.
+  `relay-server` set fails with "Unknown relay server" unless the setting is exactly one of
+  the handed-out URLs.
 - **No plain `/ws/relay` and no shared hbbr Service.** Every relay path names its pod
   (`/ws/relay/<n>`), and clients only dial the relay hbbs hands out. Drop any fixed relay
   address: a client's `relay-server`, `webclient.env.RUSTDESK_RELAY` (the web client no
   longer reads it), or a proxy or script pointing at `/ws/relay` or `<fullname>-hbbr:21119`.
 - **hbbs refuses to start without `RELAY_URLS`, or with an entry that is not a `ws://` or
   `wss://` URL.** The chart always sets valid ones; this matters only when overriding
-  `RELAY_URLS` or running hbbs yourself. Clients dial only such URLs.
+  `RELAY_URLS` or running hbbs yourself. Clients dial only such URLs, and hbbs forwards only
+  relays from its own list.
+- **Changing `hbbr.replicas` can refuse a few sessions while hbbs rolls out.** The pods hold
+  different relay lists until the rollout ends, so a session on a new relay URL that meets an
+  hbbs pod without it fails with "Unknown relay server"; a retry after the rollout works.
 - **`hbbs.relayAddress` is removed; use top-level `publicHost`.** Set it to the host
   clients use, without `:443` (keep another port, e.g. `rustdesk.example.com:8443`). The
   chart refuses to render while `hbbs.relayAddress` is set. hbbs hands out `wss://` URLs,
