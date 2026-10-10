@@ -20,7 +20,7 @@ spec:
       secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
-    # The web client routes /ws/id, /ws/relay, /api and /ui itself, so one rule covers everything.
+    # The web client routes /ws/id, /ws/relay/<n>, /api and /ui itself, so one rule covers everything.
     - host: {{ required "ingress.host is required when ingress.enabled is true" .Values.ingress.host | quote }}
       http:
         paths:

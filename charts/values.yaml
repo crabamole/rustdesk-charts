@@ -122,7 +122,7 @@ serviceAccount:
   name: ""
 
 # Optional Ingress for the whole service (one host to the web client, which
-# routes /ws/id, /ws/relay, /api and /ui itself). Remote sessions are long-lived
+# routes /ws/id, /ws/relay/<n>, /api and /ui itself). Remote sessions are long-lived
 # WebSockets: raise the controller's idle timeouts (see README).
 ingress:
   enabled: false

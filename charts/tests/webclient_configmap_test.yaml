@@ -21,7 +21,7 @@ tests:
           pattern: '(?s)location /ws/id \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
       - matchRegex:
           path: data["nginx.conf"]
-          pattern: '(?s)location /ws/relay \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
+          pattern: '(?s)location = /ws/relay/0 \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
       - matchRegex:
           path: data["nginx.conf"]
           pattern: '(?s)location /api/ \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
@@ -62,14 +62,14 @@ tests:
           path: data["nginx.conf"]
           pattern: 'location = /ws/relay/2 '
 
-  - it: keeps plain /ws/relay on the hbbr Service
+  - it: routes no plain /ws/relay
     asserts:
-      - matchRegex:
+      - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: '(?s)location /ws/relay \{\s*proxy_pass http://RELEASE-NAME-rustdesk-hbbr:21119;'
-      - matchRegex:
+          pattern: 'location /ws/relay '
+      - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: 'location = /ws/relay/0 '
+          pattern: 'RELEASE-NAME-rustdesk-hbbr:21119'
 
   - it: allows 4096 connections per worker by default
     asserts:
