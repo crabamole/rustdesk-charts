@@ -79,6 +79,9 @@ tests:
       - matchRegex:
           path: data["nginx.conf"]
           pattern: '(?m)^\s*worker_connections\s+4096;$'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*listen 8080 default_server backlog=4096;$'
 
   - it: sizes connections for the fleet from values
     set:
@@ -90,3 +93,6 @@ tests:
       - matchRegex:
           path: data["nginx.conf"]
           pattern: '(?m)^\s*worker_connections\s+12000;$'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*listen 8080 default_server backlog=12000;$'

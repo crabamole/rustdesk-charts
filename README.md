@@ -185,6 +185,11 @@ upstream), so one web client pod carries about `webclient.nginx.workerConnection
 `webclient.replicas`, and raise `webclient.resources` and `hbbs.resources` memory with it:
 the defaults (64Mi, 128Mi) are sized for a few hundred devices.
 
+When an hbbs pod stops, all of its devices register again on the other pods within about a
+second. With a few thousand devices, Postgres's default 1 CPU limit throttles that burst for
+seconds; 5000 devices were tested with `postgresql.resources.limits.cpu: "2"`. The web client
+queues up to `workerConnections` pending connections, capped by the node's `net.core.somaxconn`.
+
 ## Network policies and service account
 
 By default the chart adds ingress-only NetworkPolicies: Postgres accepts only hbbs
