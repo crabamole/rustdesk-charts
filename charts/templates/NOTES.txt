@@ -14,7 +14,7 @@ To access the web client, expose the webclient service:
 
 Service ports:
   hbbs: 21118 (WebSocket)
-  hbbr: 21119 (WebSocket)
+  hbbr: 21119 (WebSocket), one Service per pod ({{ include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}-<n>)
 
 Login is OIDC-only; there are no passwords. Nobody is admin until you promote
 someone: log in once through OIDC, then run
