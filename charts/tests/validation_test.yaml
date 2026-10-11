@@ -85,7 +85,7 @@ tests:
       trustedProxies: []
     asserts:
       - failedTemplate:
-          errorPattern: "trustedProxies is required"
+          errorPattern: "trustedProxies is required: .*sets X-Forwarded-For"
 
   - it: rejects TRUSTED_PROXIES set through a component env
     set:
