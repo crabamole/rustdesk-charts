@@ -387,6 +387,10 @@ URL-safe — it's embedded in the connection URL) or
 `MAX_DATABASE_CONNECTIONS` defaults to `10` for hbbs and `20` for the
 api-server (`hbbs.env.MAX_DATABASE_CONNECTIONS`, `apiserver.env.MAX_DATABASE_CONNECTIONS`).
 
+The api-server logs one `access` line per request (no query string; probes skipped) plus its own
+events. `apiserver.env.RUST_LOG` replaces the default filter `info,rocket=warn`;
+e.g. `info,access=off` drops the access lines.
+
 | Value | Description | Default |
 |-------|-------------|---------|
 | `postgresql.enabled` | Deploy the bundled single-instance PostgreSQL | `true` |

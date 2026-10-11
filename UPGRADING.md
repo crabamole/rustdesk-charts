@@ -45,6 +45,10 @@ client's nginx (see [Exposing it](README.md#exposing-it)).
 - **Paged lists in rustdesk-api 3.6.0.** `/api/peers`, `/api/users` and `/api/groups` return pages
   (10 by default) with the real total and accept a `q` search; callers that expected every row in
   one response must page.
+- **Quieter api-server logs (rustdesk-api 3.6.0):** one `access` line per request
+  (`GET /api/peers 200 4ms`; no query string, no probes) instead of Rocket's debug output with
+  the HTTP internals of every request. `apiserver.env.RUST_LOG` sets the filter; `serve
+  --log_level` is gone.
 - Clients need no change.
 
 ## 0.9.0
