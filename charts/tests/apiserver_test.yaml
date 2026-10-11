@@ -42,7 +42,7 @@ tests:
             name: MAX_DATABASE_CONNECTIONS
             value: "20"
 
-  - it: passes PUBLIC_URL only when set
+  - it: PUBLIC_URL overrides the default
     template: templates/apiserver-deployment.yaml
     set:
       apiserver.env.PUBLIC_URL: https://rustdesk.example.com:8443
@@ -53,14 +53,16 @@ tests:
             name: PUBLIC_URL
             value: https://rustdesk.example.com:8443
 
-  - it: omits PUBLIC_URL by default
+  - it: defaults PUBLIC_URL to https://<publicHost>
     template: templates/apiserver-deployment.yaml
+    set:
+      publicHost: rustdesk.example.com
     asserts:
-      - notContains:
+      - contains:
           path: spec.template.spec.containers[0].env
-          any: true
           content:
             name: PUBLIC_URL
+            value: https://rustdesk.example.com
 
   - it: bundled mode with auth.existingSecret reads that secret for the password
     template: templates/apiserver-deployment.yaml

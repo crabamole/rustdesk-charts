@@ -9,6 +9,10 @@ listed need nothing beyond the upgrade itself.
 Clients reach hbbs, hbbr and the api-server through the Istio ingress gateway instead of the web
 client's nginx (see [Exposing it](README.md#exposing-it)).
 
+- **The api-server requires `PUBLIC_URL`** and no longer derives its origin from `Host` or
+  `X-Forwarded-Host`. The chart sets it to `https://<publicHost>`; set `apiserver.env.PUBLIC_URL`
+  if users open another origin (e.g. `http://` or another port). Outside the chart the api-server
+  refuses to start without it.
 - **Istio is required.** Set `istio.gateway` (`<namespace>/<name>` of your Gateway),
   `istio.gatewayPods` if the gateway pods are not `istio: ingressgateway` in `istio-system`
   (Helm merges the labels with that default: override the `istio` key too), and `trustedProxies`

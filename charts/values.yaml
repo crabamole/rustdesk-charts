@@ -185,8 +185,8 @@ apiserver:
       cpu: 10m
       memory: 64Mi
   env:
-    # External URL users open, e.g. https://rustdesk.example.com (no path). Empty: taken
-    # from the request's Host / X-Forwarded-* headers. Used for the OIDC callback URL.
+    # The origin users open (no path), for OIDC callback URLs. Empty: https://<publicHost>;
+    # set http://... for a plain-HTTP setup (relay URLs then use ws://).
     PUBLIC_URL: ""
     OAUTH2_CREATE_USER: "1"
     MAX_DATABASE_CONNECTIONS: "20"

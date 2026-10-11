@@ -66,8 +66,10 @@ spec:
             {{- end }}
             - name: TRUSTED_PROXIES
               value: {{ join "," .Values.trustedProxies | quote }}
+            - name: PUBLIC_URL
+              value: {{ include "rustdesk.publicUrl" . | quote }}
             {{- range $key, $value := .Values.apiserver.env }}
-            {{- if $value }}
+            {{- if and $value (ne $key "PUBLIC_URL") }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}

@@ -299,8 +299,15 @@ topologySpreadConstraints:
 Public relay URLs hbbs hands out, one per hbbr pod: wss://<publicHost>/ws/relay/<n>
 (ws:// when apiserver.env.PUBLIC_URL is plain http).
 */}}
+{{/*
+The api-server's PUBLIC_URL: apiserver.env.PUBLIC_URL, else https://<publicHost>.
+*/}}
+{{- define "rustdesk.publicUrl" -}}
+{{- index (.Values.apiserver.env | default dict) "PUBLIC_URL" | default (printf "https://%s" .Values.publicHost) -}}
+{{- end -}}
+
 {{- define "rustdesk.relayUrls" -}}
-{{- $publicUrl := index (.Values.apiserver.env | default dict) "PUBLIC_URL" | default "" -}}
+{{- $publicUrl := include "rustdesk.publicUrl" . -}}
 {{- $scheme := ternary "ws" "wss" (hasPrefix "http://" $publicUrl) -}}
 {{- $urls := list -}}
 {{- range $i := until (int .Values.hbbr.replicas) -}}

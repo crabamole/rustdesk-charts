@@ -137,9 +137,9 @@ hands out (or `ws://` on port 80):
   `http(s)://<host>:P`, and `publicHost` to `<host>:P`; all three must carry
   the same port.
 
-The api-server builds its OIDC callback URL from the request's `Host` (or
-`X-Forwarded-Host` / `X-Forwarded-Proto`). If a proxy rewrites those, or users reach
-the service on another port (e.g. a NodePort), set the URL users open explicitly:
+The api-server builds its OIDC callback URL from `PUBLIC_URL`, never from request headers.
+The chart sets it to `https://<publicHost>`; if users open another origin (another
+scheme or port), set it explicitly:
 
 ```yaml
 apiserver:
@@ -285,8 +285,8 @@ issuer = "https://login.example.com/<tenant>/v2.0"  # the IdP's issuer URL
   IdP's ID tokens, i.e. the `issuer` in its `/.well-known/openid-configuration`.
   ID tokens with another issuer, another audience than `app_id`, or an expired
   `exp` are rejected.
-- Register `https://<your host>/api/oidc/callback` as the redirect URI
-  (`<PUBLIC_URL>/api/oidc/callback` when `apiserver.env.PUBLIC_URL` is set).
+- Register `<PUBLIC_URL>/api/oidc/callback` as the redirect URI (by default
+  `https://<publicHost>/api/oidc/callback`).
 - If the IdP's certificate comes from a private CA, add it with `extraCACerts`.
 
 ```bash
