@@ -20,6 +20,11 @@ The RustDesk web client and WebSocket-based peer registration were [removed from
 
 ## Prerequisites
 
+### Istio
+
+Clients reach the servers through an existing Istio ingress gateway (see [Exposing it](#exposing-it)).
+The chart only needs the `networking.istio.io/v1beta1` VirtualService API; it is tested on Istio 1.16.7.
+
 ### Generate keypair
 
 The chart requires a Kubernetes secret containing the hbbs keypair. hbbs signs with it and the web client reads the public key from it, so there is no key to copy into values. When installing against a cluster, the chart checks that the Secret exists, has both keys, and that the public key belongs to the private key. Back the Secret up: every client trusts this key, and losing it means re-keying them all.
