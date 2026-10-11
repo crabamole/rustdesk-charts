@@ -172,9 +172,10 @@ Rolling updates replace one pod at a time:
 | web client | Default 30 s grace period; nothing to drain. |
 
 hbbs serves `/livez` and `/readyz` on port 21121, hbbr on 21122, the api-server on its API
-port. A pod whose `/readyz` fails leaves the Service: shutting down for hbbs and hbbr, and the
-database unreachable for the api-server (hbbs keeps its devices through a database outage); one
-whose `/livez` fails is restarted.
+port. A pod whose `/readyz` fails leaves the Service; that happens only while it shuts down. A
+database outage does not make pods unready: every pod shares the database, so hbbs keeps its
+devices and the api-server answers requests with fast errors until it is back. One whose `/livez`
+fails is restarted.
 
 With two or more replicas a component gets a PodDisruptionBudget (one pod down at a time).
 Pods of each component are spread over nodes when the scheduler can (`ScheduleAnyway`).
