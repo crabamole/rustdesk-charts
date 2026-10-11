@@ -11,6 +11,11 @@ tests:
     asserts:
       - equal: { path: spec.gateways, value: ["istio-ingress/corp"] }
       - equal: { path: spec.hosts, value: [rustdesk.example.com] }
+  - it: drops the port from publicHost, Istio rejects it in hosts
+    set:
+      publicHost: rustdesk.example.com:8443
+    asserts:
+      - equal: { path: spec.hosts, value: [rustdesk.example.com] }
   - it: matches istio.hosts when set
     set:
       istio.hosts: [rustdesk.internal]

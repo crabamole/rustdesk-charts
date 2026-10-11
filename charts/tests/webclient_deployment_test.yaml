@@ -222,12 +222,12 @@ tests:
           path: spec.replicas
           value: 2
 
-  - it: drains proxied sessions for 30 minutes by default
+  - it: has nothing to drain, so keeps the default 30 s grace period
     template: templates/webclient-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
-          value: 1800
+          value: 30
 
   - it: takes the grace period from values
     template: templates/webclient-deployment.yaml
@@ -238,14 +238,11 @@ tests:
           path: spec.template.spec.terminationGracePeriodSeconds
           value: 60
 
-  - it: holds nginx until relayed sessions end, at most the grace period minus 10 s, then stops it
+  - it: has no preStop hook
     template: templates/webclient-deployment.yaml
-    set:
-      webclient.terminationGracePeriodSeconds: 120
     asserts:
-      - equal:
-          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command[2]
-          value: "end=$(($(date +%s) + 110)); sleep 5; while [ $(date +%s) -lt $end ] && { ! command -v netstat >/dev/null || netstat -tn | grep -qE ':21119 +ESTABLISHED'; }; do sleep 2; done; nginx -s stop"
+      - isNull:
+          path: spec.template.spec.containers[0].lifecycle
 
   - it: spreads pods over nodes without blocking scheduling
     template: templates/webclient-deployment.yaml

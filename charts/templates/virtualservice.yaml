@@ -10,8 +10,9 @@ metadata:
 spec:
   gateways:
     - {{ .Values.istio.gateway }}
+  # Istio rejects a port in hosts.
   hosts:
-    {{- toYaml (.Values.istio.hosts | default (list .Values.publicHost)) | nindent 4 }}
+    {{- toYaml (.Values.istio.hosts | default (list (first (splitList ":" .Values.publicHost)))) | nindent 4 }}
   # No timeouts: devices and sessions are WebSockets open for hours.
   http:
     - match: [{ uri: { prefix: /ws/id } }]

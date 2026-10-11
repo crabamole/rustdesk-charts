@@ -253,9 +253,18 @@ spec:
       {{- if .from }}
       from:
         {{- range .from }}
+        {{- if eq . "gateway" }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $.context.Values.istio.gatewayPods.namespace }}
+          podSelector:
+            matchLabels:
+              {{- toYaml $.context.Values.istio.gatewayPods.labels | nindent 14 }}
+        {{- else }}
         - podSelector:
             matchLabels:
               {{- include "rustdesk.selectorLabels" (dict "context" $.context "component" .) | nindent 14 }}
+        {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}

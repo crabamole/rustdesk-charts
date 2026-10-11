@@ -14,7 +14,7 @@ tests:
           path: spec.policyTypes
           value: [Ingress]
 
-  - it: leaves the web client open to any source (ingress controller or gateway)
+  - it: admits only the gateway pods to the web client
     documentSelector:
       path: metadata.name
       value: RELEASE-NAME-rustdesk-webclient
@@ -22,8 +22,8 @@ tests:
       - equal:
           path: spec.ingress
           value:
-            - ports:
-                - port: http
+            - ports: [{ port: http }]
+              from: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: istio-system } }, podSelector: { matchLabels: { istio: ingressgateway } } }]
 
   - it: lets only hbbs and the api-server reach Postgres
     documentSelector:
@@ -48,20 +48,20 @@ tests:
                 app.kubernetes.io/name: apiserver
                 app.kubernetes.io/instance: RELEASE-NAME
 
-  - it: lets the web client and hbbs reach the api-server
+  - it: lets the gateway pods and hbbs reach the api-server
     documentSelector:
       path: metadata.name
       value: RELEASE-NAME-rustdesk-apiserver
     asserts:
-      - lengthEqual:
-          path: spec.ingress[0].from
-          count: 2
       - equal:
-          path: spec.ingress[0].ports
+          path: spec.ingress
           value:
-            - port: api
+            - ports: [{ port: api }]
+              from:
+                - { namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: istio-system } }, podSelector: { matchLabels: { istio: ingressgateway } } }
+                - { podSelector: { matchLabels: { app.kubernetes.io/name: hbbs, app.kubernetes.io/instance: RELEASE-NAME } } }
 
-  - it: lets the web client reach hbbs and hbbs pods reach each other's internal port
+  - it: lets the gateway pods reach hbbs and hbbs pods reach each other's internal port
     documentSelector:
       path: metadata.name
       value: RELEASE-NAME-rustdesk-hbbs
@@ -69,22 +69,12 @@ tests:
       - equal:
           path: spec.ingress
           value:
-            - ports:
-                - port: ws
-              from:
-                - podSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: webclient
-                      app.kubernetes.io/instance: RELEASE-NAME
-            - ports:
-                - port: internal
-              from:
-                - podSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: hbbs
-                      app.kubernetes.io/instance: RELEASE-NAME
+            - ports: [{ port: ws }]
+              from: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: istio-system } }, podSelector: { matchLabels: { istio: ingressgateway } } }]
+            - ports: [{ port: internal }]
+              from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: hbbs, app.kubernetes.io/instance: RELEASE-NAME } } }]
 
-  - it: lets the web client reach hbbr and hbbs poll hbbr's health port
+  - it: lets the gateway pods reach hbbr and hbbs poll hbbr's health port
     documentSelector:
       path: metadata.name
       value: RELEASE-NAME-rustdesk-hbbr
@@ -92,20 +82,25 @@ tests:
       - equal:
           path: spec.ingress
           value:
-            - ports:
-                - port: ws
-              from:
-                - podSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: webclient
-                      app.kubernetes.io/instance: RELEASE-NAME
-            - ports:
-                - port: health
-              from:
-                - podSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: hbbs
-                      app.kubernetes.io/instance: RELEASE-NAME
+            - ports: [{ port: ws }]
+              from: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: istio-system } }, podSelector: { matchLabels: { istio: ingressgateway } } }]
+            - ports: [{ port: health }]
+              from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: hbbs, app.kubernetes.io/instance: RELEASE-NAME } } }]
+
+  - it: selects custom gateway pods
+    set:
+      istio.gatewayPods:
+        namespace: edge
+        labels: { istio: custom, tier: ingress }
+    documentSelector:
+      path: metadata.name
+      value: RELEASE-NAME-rustdesk-webclient
+    asserts:
+      - equal:
+          path: spec.ingress[0].from
+          value:
+            - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: edge } }
+              podSelector: { matchLabels: { istio: custom, tier: ingress } }
 
   - it: omits Postgres and mock policies when those are not deployed
     set:

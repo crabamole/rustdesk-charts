@@ -23,7 +23,7 @@ spec:
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
       # No pod needs the Kubernetes API.
       automountServiceAccountToken: false
-      # nginx stops gracefully (SIGQUIT) and keeps proxied sessions until they end or this runs out.
+      # Serves static files only; nothing to drain.
       terminationGracePeriodSeconds: {{ .Values.webclient.terminationGracePeriodSeconds }}
       {{- include "rustdesk.topologySpread" (dict "context" . "component" "webclient") | nindent 6 }}
       {{- with .Values.webclient.nodeSelector }}
@@ -81,12 +81,6 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault
-          lifecycle:
-            # Keep serving while relay sessions run; then stop nginx at once so devices get a close and
-            # reconnect, instead of idling on a backend the Service no longer routes to.
-            preStop:
-              exec:
-                command: ["sh", "-c", "end=$(($(date +%s) + {{ max (sub .Values.webclient.terminationGracePeriodSeconds 10) 5 }})); sleep 5; while [ $(date +%s) -lt $end ] && { ! command -v netstat >/dev/null || netstat -tn | grep -qE ':21119 +ESTABLISHED'; }; do sleep 2; done; nginx -s stop"]
           ports:
             - name: http
               containerPort: 8080

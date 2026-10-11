@@ -2,81 +2,32 @@ suite: web client nginx config
 templates:
   - webclient-configmap.yaml
 tests:
-  - it: keeps the client's port in the Host sent to the api-server
+  - it: serves the static files on the unprivileged port
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: '(?m)^\s*listen 8080;$'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'root /usr/share/nginx/html;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'add_header Cache-Control "no-cache, must-revalidate";'
+
+  - it: proxies nothing, the VirtualService routes to the backends
     asserts:
       - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: 'proxy_set_header Host \$host;'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location /api/ \{[^}]*proxy_set_header Host \$http_host;'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location /ui \{[^}]*proxy_set_header Host \$http_host;'
-
-  - it: overwrites the client address headers on every backend location
-    asserts:
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location /ws/id \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location = /ws/relay/0 \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location /api/ \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location /ui \{[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
+          pattern: 'proxy_pass'
       - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: 'proxy_add_x_forwarded_for'
-
-  - it: routes each hbbr pod's relay URL to that pod's Service
-    set:
-      hbbr.replicas: 2
-    asserts:
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location = /ws/relay/0 \{\s*proxy_pass http://RELEASE-NAME-rustdesk-hbbr-0:21119;[^}]*proxy_set_header Upgrade \$http_upgrade;[^}]*proxy_set_header X-Real-IP \$remote_addr;[^}]*proxy_set_header X-Forwarded-For \$remote_addr;'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?s)location = /ws/relay/1 \{\s*proxy_pass http://RELEASE-NAME-rustdesk-hbbr-1:21119;'
+          pattern: '/ws/'
       - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: 'location = /ws/relay/2 '
-
-  - it: routes no plain /ws/relay
-    asserts:
+          pattern: 'real_ip'
       - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: 'location /ws/relay '
+          pattern: 'worker_connections\s+4096'
       - notMatchRegex:
           path: data["nginx.conf"]
-          pattern: 'RELEASE-NAME-rustdesk-hbbr:21119'
-
-  - it: allows 4096 connections per worker by default
-    asserts:
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?m)^\s*worker_rlimit_nofile\s+8192;$'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?m)^\s*worker_connections\s+4096;$'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?m)^\s*listen 8080 default_server backlog=4096;$'
-
-  - it: sizes connections for the fleet from values
-    set:
-      webclient.nginx.workerConnections: 12000
-    asserts:
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?m)^\s*worker_rlimit_nofile\s+24000;$'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?m)^\s*worker_connections\s+12000;$'
-      - matchRegex:
-          path: data["nginx.conf"]
-          pattern: '(?m)^\s*listen 8080 default_server backlog=12000;$'
+          pattern: 'worker_rlimit_nofile|backlog='

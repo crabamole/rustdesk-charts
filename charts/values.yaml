@@ -82,11 +82,8 @@ webclient:
     tag: "1.4.9-9"
     pullPolicy: IfNotPresent
   replicas: 1
-  # nginx proxies every session, so a stopping pod drains like hbbr.
-  terminationGracePeriodSeconds: 1800
-  nginx:
-    # Two per proxied WebSocket: one pod carries about half this many devices and sessions.
-    workerConnections: 4096
+  # Serves static files only; nothing to drain.
+  terminationGracePeriodSeconds: 30
   podAnnotations: {}
   podLabels: {}
   nodeSelector: {}
