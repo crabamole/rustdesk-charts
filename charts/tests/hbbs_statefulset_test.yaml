@@ -468,11 +468,13 @@ tests:
             name: API_SERVER
             value: http://RELEASE-NAME-rustdesk-apiserver:21114
 
-  - it: waits before draining so the Service drops the pod first
+  - it: has no preStop sleep; hbbs waits for connections to stop on SIGTERM
     asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
       - equal:
-          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
-          value: ["sleep", "5"]
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 30
 
   - it: ignores a user HEALTH_PORT so the probes keep working
     set:

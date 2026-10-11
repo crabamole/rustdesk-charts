@@ -28,6 +28,8 @@ spec:
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
       # No pod needs the Kubernetes API.
       automountServiceAccountToken: false
+      # hbbs serves on after SIGTERM until connections stop (at most 15 s), then closes its devices.
+      terminationGracePeriodSeconds: 30
       securityContext:
         fsGroup: 1000
       {{- include "rustdesk.topologySpread" (dict "context" . "component" "hbbs") | nindent 6 }}
@@ -113,11 +115,6 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 2
-          lifecycle:
-            # Devices hbbs disconnects on SIGTERM must reconnect to another pod.
-            preStop:
-              exec:
-                command: ["sleep", "5"]
           volumeMounts:
             - name: data
               mountPath: /data

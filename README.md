@@ -182,8 +182,9 @@ Pods of each component are spread over nodes when the scheduler can (`ScheduleAn
 hbbs registration limits and hbbr bandwidth limits apply per pod, so the effective limit is
 the setting times the number of pods.
 
-hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes device
-connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
+On SIGTERM hbbs keeps serving until no new connection has arrived for 2 s (at most 15 s), so the
+Service and the gateway have moved on before it closes its device connections; devices then
+reconnect to another pod. hbbr waits at least 10 s after SIGTERM
 before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin.
 
 If an hbbr pod's node is lost without the connection being reset, native clients and devices time
