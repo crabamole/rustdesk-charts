@@ -168,7 +168,7 @@ Rolling updates replace one pod at a time:
 |-----------|-------------------|
 | hbbs | Devices on the stopping pod reconnect at once to the others; running sessions are not affected. The next pod is only updated once the previous one has been Ready for `hbbs.minReadySeconds` (default 20 s), so devices that moved to it outlast the client's 18 s reconnect throttle. |
 | hbbr | The stopping pod takes no new sessions and relays its running ones until they end or `hbbr.terminationGracePeriodSeconds` (default 1800 s) runs out; those viewers then reconnect. Updating every pod can take replicas x the grace period. |
-| api-server | A 5 s pause before stopping lets the Service drop the pod first. |
+| api-server | A 15 s pause before stopping lets the Service and the gateway drop the pod first; with 5 s, requests still reached stopping pods in about 1 of 6 HA test runs. |
 | web client | Default 30 s grace period; nothing to drain. |
 
 hbbs serves `/livez` and `/readyz` on port 21121, hbbr on 21122, the api-server on its API

@@ -159,14 +159,14 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
-          value: ["sleep", "5"]
+          value: ["sleep", "15"]
 
   - it: grants more grace than preStop plus Rocket's 15 s in-flight drain
     template: templates/apiserver-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
-          value: 30
+          value: 40
       - isNotNull:
           path: spec.template.spec.terminationGracePeriodSeconds
 
