@@ -154,19 +154,18 @@ tests:
           path: spec.replicas
           value: 2
 
-  - it: waits before stopping so the Service drops the pod first
+  - it: has no preStop sleep; the api-server drains itself on SIGTERM
     template: templates/apiserver-deployment.yaml
     asserts:
-      - equal:
-          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
-          value: ["sleep", "15"]
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
 
-  - it: grants more grace than preStop plus Rocket's 15 s in-flight drain
+  - it: grants more grace than the drain plus Rocket's 15 s in-flight drain
     template: templates/apiserver-deployment.yaml
     asserts:
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
-          value: 40
+          value: 50
       - isNotNull:
           path: spec.template.spec.terminationGracePeriodSeconds
 

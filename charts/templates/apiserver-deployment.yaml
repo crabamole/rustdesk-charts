@@ -31,8 +31,8 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 1000
-      # Must exceed the preStop pause plus Rocket's 15 s drain of in-flight requests.
-      terminationGracePeriodSeconds: 40
+      # The api-server serves on after SIGTERM until requests stop (at most 25 s), then drains in-flight ones (15 s).
+      terminationGracePeriodSeconds: 50
       {{- include "rustdesk.topologySpread" (dict "context" . "component" "apiserver") | nindent 6 }}
       {{- with .Values.apiserver.nodeSelector }}
       nodeSelector:
@@ -87,11 +87,6 @@ spec:
               drop: ["ALL"]
             seccompProfile:
               type: RuntimeDefault
-          lifecycle:
-            # Let the Service and the gateway drop this pod first: it refuses new connections on SIGTERM.
-            preStop:
-              exec:
-                command: ["sleep", "15"]
           ports:
             - name: api
               containerPort: {{ .Values.apiserver.port | default 21114 }}
