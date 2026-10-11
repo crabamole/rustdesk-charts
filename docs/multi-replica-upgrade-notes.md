@@ -4,7 +4,7 @@ Collected for the joint release; they move into UPGRADING.md then.
 
 - **Upgrade everything together:** hbbs, hbbr, the api-server, the web client, this chart
   and the native clients. hbbs hands out one relay URL per hbbr pod
-  (`wss://<publicHost>/ws/relay/<n>`); only this chart's web client routes those paths, and
+  (`wss://<publicHost>/ws/relay/<n>`); only this chart's VirtualService routes those paths, and
   only the matching clients dial the relay hbbs hands out. A stock client with
   `relay-server` set fails with "Unknown relay server" unless the setting is exactly one of
   the handed-out URLs.
@@ -27,10 +27,9 @@ Collected for the joint release; they move into UPGRADING.md then.
   Deployments; for a few seconds old and new pods run side by side and devices reconnect
   once. Scripts using `deploy/<fullname>-hbbs` or `deploy/<fullname>-hbbr` must use
   `statefulset/...`.
-- **Stopping hbbr and web client pods drains sessions for up to 30 minutes**
-  (`hbbr.terminationGracePeriodSeconds`, `webclient.terminationGracePeriodSeconds`,
-  default 1800). A rollout of either can take replicas x that long; lower them for faster
-  rollouts at the cost of cutting longer sessions.
+- **Stopping hbbr pods drains sessions for up to 30 minutes**
+  (`hbbr.terminationGracePeriodSeconds`, default 1800). A rollout can take replicas x that
+  long; lower it for faster rollouts at the cost of cutting longer sessions.
 - **Probes moved to `/livez` and `/readyz`** (hbbs port 21121, hbbr 21122, api-server its
   API port). hbbs also binds 21120 (internal), hbbr 21122. NetworkPolicies let hbbs pods
   reach each other on 21120 and hbbr's health port on 21122.

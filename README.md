@@ -54,6 +54,12 @@ Create a `values-override.yaml` with your deployment-specific settings:
 # Required: the host clients reach the web client through (add :<port> if not 443).
 publicHost: "rustdesk.example.com"
 
+# Required: the Istio Gateway and the CIDRs of its pods (see "Exposing it").
+istio:
+  gateway: istio-ingress/public
+trustedProxies:
+  - 192.0.2.0/24
+
 # Quickstart only: the bundled OIDC mock, reachable by browsers at this URL.
 # For production, disable it and use your IdP (see "OIDC provider").
 oidcMock:
@@ -76,37 +82,36 @@ The chart's default images:
 
 ## Exposing it
 
-Everything goes through the web client Service (port 80): it serves the web app and
-routes `/ws/id`, `/ws/relay/<n>`, `/api` and `/ui` itself:
+Clients reach the chart through an Istio Gateway that the platform owns (listener, TLS
+certificate, gateway pods); the chart never creates it. It renders one VirtualService bound to
+that Gateway. The minimal values:
+
+```yaml
+publicHost: rustdesk.example.com
+istio:
+  gateway: istio-ingress/public   # <namespace>/<name> of the Gateway
+trustedProxies:                   # the gateway pods and every proxy in front of them
+  - 192.0.2.0/24
+```
+
+The VirtualService matches `publicHost` (any `:port` stripped) and routes:
 
 | Path | Backend |
 |------|---------|
 | `/ws/id` | hbbs:21118 (WebSocket) |
-| `/ws/relay/<n>` | hbbr pod `<n>`:21119 (WebSocket), one path per pod |
+| `/ws/relay/<n>` | hbbr pod `<n>`:21119 (WebSocket), one exact path per pod |
 | `/api/`, `/ui` | api-server |
-| `/` | web client |
+| `/` | web client (static files) |
 
-So exposing the chart takes a single rule sending your host to that Service; set
-`publicHost` to `<host>`. The chart can create an Ingress for you, for example with
-ingress-nginx and cert-manager:
+- `istio.hosts` replaces the hosts to match; set it when a proxy in front rewrites `Host`.
+- `istio.requestHeaders` sets headers on every route, e.g. `x-forwarded-proto: https` behind a
+  plain-HTTP gateway listener.
+- Every route removes a client-supplied `X-Real-IP`.
+- Istio leaves route and stream idle timeouts off, so open WebSockets are not cut and nothing
+  needs raising.
+- Changing `hbbr.replicas` changes only the VirtualService and hbbs's relay URLs.
 
-```yaml
-ingress:
-  enabled: true
-  className: nginx
-  host: rustdesk.example.com
-  tls:
-    secretName: rustdesk-tls
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    # Remote sessions are long-lived WebSockets; the default 60 s idle timeout drops them.
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-```
-
-With other routing (an Istio VirtualService, a Gateway API HTTPRoute, ...), route
-the host to the `<release>-rustdesk-webclient` Service on port 80 the same way,
-keep the `Host` header and allow long-lived WebSockets.
+`ingress` and `realIp` are removed; the chart fails if either is set.
 
 ### Client settings and ports
 
@@ -147,11 +152,10 @@ each, losing a pod or draining a node does not take remote access down:
   pods record in Postgres which pod holds which device and pass session setup to that pod
   over an internal port (21120). Devices on a lost pod reconnect to another within about 30 s.
 - **hbbr** (StatefulSet): hbbs hands out one URL per pod, `wss://<publicHost>/ws/relay/<n>`,
-  and the web client routes each to its pod, so both halves of a session meet there. hbbs
+  and the Istio gateway routes each to its pod, so both halves of a session meet there. hbbs
   hands out only pods whose `/readyz` answers.
 - **api-server** (Deployment): keeps no state of its own.
-- **web client** (Deployment): its nginx proxies every WebSocket. Changing `hbbr.replicas`
-  restarts it, since its config lists one location per hbbr pod.
+- **web client** (Deployment): serves the static files only; it holds no sessions.
 
 Rolling updates replace one pod at a time:
 
@@ -160,7 +164,7 @@ Rolling updates replace one pod at a time:
 | hbbs | Devices on the stopping pod reconnect at once to the others; running sessions are not affected. The next pod is only updated once the previous one has been Ready for `hbbs.minReadySeconds` (default 20 s), so devices that moved to it outlast the client's 18 s reconnect throttle. |
 | hbbr | The stopping pod takes no new sessions and relays its running ones until they end or `hbbr.terminationGracePeriodSeconds` (default 1800 s) runs out; those viewers then reconnect. Updating every pod can take replicas x the grace period. |
 | api-server | A 5 s pause before stopping lets the Service drop the pod first. |
-| web client | The stopping pod takes no new connections and keeps relaying its sessions until they end or `webclient.terminationGracePeriodSeconds` (default 1800 s) minus 10 s runs out; nginx then stops and its devices reconnect to the other pods. Updating every pod can take replicas x the grace period. |
+| web client | Default 30 s grace period; nothing to drain. |
 
 hbbs serves `/livez` and `/readyz` on port 21121, hbbr on 21122, the api-server on its API
 port. A pod whose `/readyz` fails leaves the Service: shutting down for hbbs and hbbr, and the
@@ -174,16 +178,15 @@ the setting times the number of pods.
 
 hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes device
 connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
-before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin. The same holds for `webclient.terminationGracePeriodSeconds`: its `preStop` (5 s pause, then the hold) can outlast a grace period under 15.
+before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin.
 
 ### Sizing
 
-Every device keeps one WebSocket open through the web client, and every session adds two
-more (viewer and device to hbbr). nginx counts each proxied WebSocket twice (client and
-upstream), so one web client pod carries about `webclient.nginx.workerConnections / 2`
-(default 4096 / 2) devices and sessions. For a large fleet raise `workerConnections` or
-`webclient.replicas`, and raise `webclient.resources` and `hbbs.resources` memory with it:
-the defaults (64Mi, 128Mi) are sized for a few hundred devices.
+Every device keeps one WebSocket open through the Istio gateway, and every session adds two
+more (viewer and device to hbbr), one per side. Sizing the gateway for that many connections is
+up to whoever runs it. Restarting a gateway pod drops every connection through it once its drain
+(Istio default 5 s) ends; devices reconnect as they do when an hbbs pod stops. Raise
+`hbbs.resources` memory with the fleet: the defaults are sized for a few hundred devices.
 
 When an hbbs pod stops, all of its devices register again on the other pods within about a
 second, and each registration reads and writes Postgres. Measured rolling restarts of hbbs
@@ -195,18 +198,20 @@ second, and each registration reads and writes Postgres. Measured rolling restar
 | 5000 | 1 (default) | 7-8.5 s (Postgres throttled) |
 | 5000 | 2 | 3-3.5 s (same without a limit) |
 
-The web client queues up to `workerConnections` pending connections and hbbs up to 4096,
-both capped by `net.core.somaxconn` in the pod (4096 on current kernels).
+hbbs queues up to 4096 pending connections, capped by `net.core.somaxconn` in the pod (4096 on
+current kernels).
 
 ## Network policies and service account
 
 By default the chart adds ingress-only NetworkPolicies: Postgres accepts only hbbs
-and the api-server; the api-server only the web client and hbbs; hbbs and hbbr the
-web client on their WebSocket ports, plus hbbs pods on hbbs's internal port (21120) and
-hbbr's health port (21122). The web client (and the OIDC mock) accept any source, so your
-ingress controller or gateway needs no extra rules. Egress is not restricted. Kubelet
-probes come from the pod's own node, which NetworkPolicy does not block.
-Disable with `networkPolicy.enabled: false`; they need a CNI that enforces
+and the api-server; the api-server only the gateway pods and hbbs; hbbs and hbbr the
+gateway pods on their WebSocket ports, plus hbbs pods on hbbs's internal port (21120) and
+hbbr's health port (21122); the web client the gateway pods. The OIDC mock accepts any source.
+The gateway pods are selected by `istio.gatewayPods` (namespace, default `istio-system`, and
+pod labels, default `istio: ingressgateway`). Helm merges `istio.gatewayPods.labels` with that
+default, so for other labels also override the `istio` key (set `istio: null` to drop it).
+Egress is not restricted. Kubelet probes come from the pod's own node, which NetworkPolicy does
+not block. Disable with `networkPolicy.enabled: false`; they need a CNI that enforces
 NetworkPolicy (Calico, Cilium, ...).
 
 All pods run under one ServiceAccount with no API token mounted (none of them
@@ -215,28 +220,26 @@ talks to the Kubernetes API). Set `serviceAccount.create: false` and
 
 ## Service mesh (Istio)
 
-Every component accepts `podAnnotations` (`hbbs`, `hbbr`, `apiserver`, `webclient`,
-`postgresql`, `oidcMock`). Inject the sidecar into all of them or into none: with
-STRICT mTLS, a pod with a sidecar refuses plain connections from pods without one.
-For the bundled Postgres that shows as hbbs failing to connect and the api-server
-hanging at startup without opening its port. To keep a component out of the mesh:
-
-```yaml
-postgresql:
-  podAnnotations:
-    sidecar.istio.io/inject: "false"
-```
+The chart sets `sidecar.istio.io/inject: "false"` on every pod (hbbs, hbbr, the api-server, the
+web client, Postgres, the OIDC mock), so the gateway reaches them in plain text. A `podAnnotations`
+value for that key wins. Do not add a `DestinationRule` that forces `ISTIO_MUTUAL` for these hosts:
+there is no sidecar to terminate it, and the connection fails. With STRICT mTLS, inject all of
+the components or none of them, since a pod with a sidecar refuses plain connections from pods
+without one.
 
 ## Client addresses behind proxies
 
-hbbs, hbbr and the api-server record the client address the web client nginx passes them in
-`X-Real-IP`. When the web client is behind other proxies, list them in `realIp.trustedProxies` and
-name the header they put the client address in (`realIp.header`, default `X-Forwarded-For`);
-otherwise the nearest proxy's address is recorded. Client-supplied values are always replaced.
+hbbs, hbbr and the api-server read the client address from `X-Forwarded-For` only; `X-Real-IP`
+is never read. The chart sets `TRUSTED_PROXIES` on all three from `trustedProxies`:
 
-To make the backends accept forwarded headers only from the web client pods, set
-`TRUSTED_PROXIES` (comma-separated CIDRs, e.g. the cluster's pod range) in `hbbs.env`,
-`hbbr.env` and `apiserver.env`.
+1. A connection from a peer outside `trustedProxies` is the client; its headers are ignored.
+2. Otherwise `X-Forwarded-For` is walked from the right, skipping addresses in `trustedProxies`;
+   the first other address is the client.
+
+`trustedProxies` must list the gateway pods and every proxy in front of the gateway (load
+balancer, CDN), as CIDRs. An empty list trusts no peer, so every client would be recorded as the
+gateway; the chart refuses to render without it. `*.env.TRUSTED_PROXIES` is rejected: use
+`trustedProxies`.
 
 ## OIDC provider
 

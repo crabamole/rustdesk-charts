@@ -3,6 +3,31 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.10.0
+
+0.10.0 ships rustdesk-server 1.1.16-5 and rustdesk-api 3.6.0 (web client 1.4.9-9 unchanged).
+Clients reach hbbs, hbbr and the api-server through the Istio ingress gateway instead of the web
+client's nginx (see [Exposing it](README.md#exposing-it)).
+
+- **Istio is required.** Set `istio.gateway` (`<namespace>/<name>` of your Gateway),
+  `istio.gatewayPods` if the gateway pods are not `istio: ingressgateway` in `istio-system`
+  (Helm merges the labels with that default: override the `istio` key too), and `trustedProxies`
+  (CIDRs of the gateway pods and every proxy in front of them). The chart refuses to render
+  without `istio.gateway` and `trustedProxies`.
+- **Delete any hand-written VirtualService** that routes everything to the web client; the
+  chart's own VirtualService routes `/ws/id`, `/ws/relay/<n>`, `/api/`, `/ui` and `/`.
+- **`ingress`, `realIp`, `webclient.nginx` and `*.env.TRUSTED_PROXIES` are removed;** the chart
+  fails if they are set. Use `trustedProxies`.
+- **Upgrade the server and api-server images with the chart.** hbbs, hbbr and the api-server now
+  read the client address from `X-Forwarded-For` only (never `X-Real-IP`); older images prefer
+  `X-Real-IP`, which the gateway does not set.
+- **Every pod gets `sidecar.istio.io/inject: "false"`**, and the web client serves static
+  files only (no drain, default grace period).
+- **Paged lists in rustdesk-api 3.6.0.** `/api/peers`, `/api/users` and `/api/groups` return pages
+  (10 by default) with the real total and accept a `q` search; callers that expected every row in
+  one response must page.
+- Clients need no change.
+
 ## 0.9.0
 
 0.9.0 ships rustdesk-server 1.1.16-4, rustdesk-api 3.5.0 and web client 1.4.9-9. It runs hbbs,
