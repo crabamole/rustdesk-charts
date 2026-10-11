@@ -185,10 +185,10 @@ hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes 
 connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
 before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin.
 
-If the node of an hbbr pod is lost without its connections being reset, native clients and
-devices time out on their own within about 30 s, but a browser viewer's session stays open behind
-the gateway until the user reconnects: the gateway sets no idle timeouts, so open WebSockets are
-never cut.
+If an hbbr pod's node is lost without the connection being reset, native clients and devices time
+out on their own within about 30 s, and the web client within 12 s; each then reconnects through
+another relay. The gateway sets no idle timeouts, so it keeps the dead connection until its TCP
+retransmissions give up; that costs a socket, not the session.
 
 ### Sizing
 
