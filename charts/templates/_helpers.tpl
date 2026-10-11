@@ -195,6 +195,7 @@ Settings the web client and hbbs cannot work without.
 {{- range $k := list "ingress" "realIp" -}}
 {{- if hasKey $.Values $k -}}{{- fail (printf "%s was removed: clients reach the servers through the Istio Gateway (see UPGRADING.md)" $k) -}}{{- end -}}
 {{- end -}}
+{{- if hasKey .Values.webclient "nginx" -}}{{- fail "webclient.nginx was removed: clients reach the servers through the Istio Gateway (see UPGRADING.md)" -}}{{- end -}}
 {{- if not .Values.istio.gateway -}}{{- fail "istio.gateway is required: the <namespace>/<name> of the Istio Gateway clients connect through" -}}{{- end -}}
 {{- if not .Values.trustedProxies -}}{{- fail "trustedProxies is required: CIDRs of the gateway pods and any proxy in front of them" -}}{{- end -}}
 {{- range $c := list "hbbs" "hbbr" "apiserver" -}}

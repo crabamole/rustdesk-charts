@@ -90,7 +90,7 @@ that Gateway. The minimal values:
 publicHost: rustdesk.example.com
 istio:
   gateway: istio-ingress/public   # <namespace>/<name> of the Gateway
-trustedProxies:                   # the gateway pods and every proxy in front of them
+trustedProxies:                   # the gateway pods, and proxies that set X-Forwarded-For
   - 192.0.2.0/24
 ```
 
@@ -180,6 +180,11 @@ hbbs gives a stopping pod 5 s (`preStop`) to leave the Service before it closes 
 connections, so devices reconnect to another pod. hbbr waits at least 10 s after SIGTERM
 before it can exit, so a `hbbr.terminationGracePeriodSeconds` under 10 always ends in a kill; keep it at least 15 for margin.
 
+If the node of an hbbr pod is lost without its connections being reset, native clients and
+devices time out on their own within about 30 s, but a browser viewer's session stays open behind
+the gateway until the user reconnects: the gateway sets no idle timeouts, so open WebSockets are
+never cut.
+
 ### Sizing
 
 Every device keeps one WebSocket open through the Istio gateway, and every session adds two
@@ -236,8 +241,12 @@ is never read. The chart sets `TRUSTED_PROXIES` on all three from `trustedProxie
 2. Otherwise `X-Forwarded-For` is walked from the right, skipping addresses in `trustedProxies`;
    the first other address is the client.
 
-`trustedProxies` must list the gateway pods and every proxy in front of the gateway (load
-balancer, CDN), as CIDRs. An empty list trusts no peer, so every client would be recorded as the
+`trustedProxies` lists CIDRs. Include only hops that append to or overwrite `X-Forwarded-For`:
+the gateway pods, and a CDN or L7 proxy that sets it. Never list a hop that only forwards TCP (an
+L4 load balancer, or a NodePort/LoadBalancer Service with SNAT); make the gateway see the client
+instead, with `externalTrafficPolicy: Local` or PROXY protocol. `trustedProxies` must not overlap
+any client network: keep it as narrow as the gateway pods' range (for example `10.244.0.0/16`).
+An empty list trusts no peer, so every client would be recorded as the
 gateway; the chart refuses to render without it. `*.env.TRUSTED_PROXIES` is rejected: use
 `trustedProxies`.
 

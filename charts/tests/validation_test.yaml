@@ -103,6 +103,14 @@ tests:
       - failedTemplate:
           errorPattern: "ingress was removed"
 
+  - it: rejects the removed webclient.nginx value
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      webclient.nginx.workerConnections: 100
+    asserts:
+      - failedTemplate:
+          errorPattern: "webclient.nginx was removed"
+
   - it: rejects the removed realIp value
     set:
       oidcMock.authorizeUrl: https://oidc.example.com
@@ -110,3 +118,24 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "realIp was removed"
+
+  - it: accepts IPv4 and IPv6 CIDRs in trustedProxies
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      trustedProxies: ["10.244.0.0/16", "fd00::/8", "192.0.2.7"]
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: rejects a malformed trustedProxies entry
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      trustedProxies: ["10.0.0.0/8x"]
+    asserts:
+      - failedTemplate: {}
+
+  - it: rejects a non-address trustedProxies entry
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      trustedProxies: ["not-a-cidr"]
+    asserts:
+      - failedTemplate: {}

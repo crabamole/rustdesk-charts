@@ -114,12 +114,12 @@ istio:
     labels:
       istio: ingressgateway
 
-# Required: CIDRs of the gateway pods and of every proxy in front of the gateway. hbbs, hbbr and the
-# api-server believe X-Forwarded-For only from these addresses.
+# Required: CIDRs of the gateway pods, plus any proxy that appends to or overwrites X-Forwarded-For.
+# Never list an L4 hop or a client network; keep it as narrow as the gateway pods' range.
 trustedProxies: []
 
 # Ingress-only NetworkPolicies: each component accepts traffic only from the
-# components that call it; the web client (and the OIDC mock) accept any source.
+# components that call it; the web client accepts the gateway pods, the OIDC mock any source.
 networkPolicy:
   enabled: true
 

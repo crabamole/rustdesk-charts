@@ -12,10 +12,25 @@ client's nginx (see [Exposing it](README.md#exposing-it)).
 - **Istio is required.** Set `istio.gateway` (`<namespace>/<name>` of your Gateway),
   `istio.gatewayPods` if the gateway pods are not `istio: ingressgateway` in `istio-system`
   (Helm merges the labels with that default: override the `istio` key too), and `trustedProxies`
-  (CIDRs of the gateway pods and every proxy in front of them). The chart refuses to render
-  without `istio.gateway` and `trustedProxies`.
-- **Delete any hand-written VirtualService** that routes everything to the web client; the
-  chart's own VirtualService routes `/ws/id`, `/ws/relay/<n>`, `/api/`, `/ui` and `/`.
+  (CIDRs of the gateway pods, plus any proxy that appends to or overwrites `X-Forwarded-For`).
+  The chart refuses to render without `istio.gateway` and `trustedProxies`.
+- **List only hops that set `X-Forwarded-For` in `trustedProxies`:** the gateway pods and a CDN or
+  L7 proxy. Never list a hop that only forwards TCP (L4 load balancer, NodePort/LoadBalancer
+  Service with SNAT); use `externalTrafficPolicy: Local` or PROXY protocol so the gateway sees the
+  client. It must not overlap any client network: keep it as narrow as the gateway pods' range
+  (for example `10.244.0.0/16`).
+- **Cutover order:**
+  1. Check the gateway pods' labels (`kubectl get pod -n <ns> --show-labels`) and set
+     `istio.gatewayPods` to match. The istio/gateway Helm chart labels its pods
+     `istio: <release name>`, not `istio: ingressgateway`; with a wrong selector every request
+     times out, because the NetworkPolicies admit only those pods.
+  2. The chart's VirtualService is named after the release's full name (e.g. `rustdesk`) and
+     routes `/ws/id`, `/ws/relay/<n>`, `/api/`, `/ui` and `/`. Delete a hand-written
+     VirtualService for the same host right before `helm upgrade`: Helm refuses to adopt one of
+     the same name, and two for one host merge unpredictably. Expect a brief outage.
+  3. Run `helm upgrade`.
+  4. Verify `/ws/id` and `/api/` through the public host.
+  Rolling back to 0.9.0 needs the hand-written VirtualService re-applied.
 - **`ingress`, `realIp`, `webclient.nginx` and `*.env.TRUSTED_PROXIES` are removed;** the chart
   fails if they are set. Use `trustedProxies`.
 - **Upgrade the server and api-server images with the chart.** hbbs, hbbr and the api-server now
