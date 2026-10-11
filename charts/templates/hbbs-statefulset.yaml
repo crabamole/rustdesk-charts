@@ -21,10 +21,8 @@ spec:
         {{- with .Values.hbbs.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.hbbs.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "rustdesk.podAnnotations" (dict "context" . "component" "hbbs") | nindent 8 }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
@@ -60,6 +58,7 @@ spec:
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "HEALTH_PORT" "value" "21121") }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_URLS" "value" (include "rustdesk.relayUrls" .)) }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_CHECKS" "value" (include "rustdesk.relayChecks" .)) }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "TRUSTED_PROXIES" "value" (join "," .Values.trustedProxies)) }}
             {{- range $key, $value := .Values.hbbs.env }}
             {{- if ne $key "HEALTH_PORT" }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}

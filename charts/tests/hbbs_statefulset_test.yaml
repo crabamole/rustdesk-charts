@@ -2,6 +2,8 @@ suite: hbbs statefulset
 templates:
   - templates/hbbs-statefulset.yaml
 set:
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
   publicHost: rustdesk.example.com
 tests:
   - it: renders with default values
@@ -364,10 +366,20 @@ tests:
           path: spec.template.metadata.annotations.test-annotation
           value: "true"
 
-  - it: omits annotations when empty
+  - it: disables the Istio sidecar by default
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+
+  - it: lets podAnnotations override the sidecar default
+    set:
+      hbbs.podAnnotations:
+        sidecar.istio.io/inject: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "true"
 
   - it: renders pod labels
     set:
@@ -489,3 +501,13 @@ tests:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 60
+
+  - it: passes trustedProxies as TRUSTED_PROXIES
+    set:
+      trustedProxies: [10.244.0.0/16, 192.0.2.0/24]
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TRUSTED_PROXIES
+            value: 10.244.0.0/16,192.0.2.0/24

@@ -50,13 +50,6 @@ data:
         server {
             # Devices of a draining hbbs pod all reconnect through here at once; the default backlog of 511 drops them.
             listen 8080 default_server backlog={{ int .Values.webclient.nginx.workerConnections }};
-            {{- range .Values.realIp.trustedProxies }}
-            set_real_ip_from {{ . }};
-            {{- end }}
-            {{- if .Values.realIp.trustedProxies }}
-            real_ip_header {{ .Values.realIp.header }};
-            real_ip_recursive on;
-            {{- end }}
 
             location / {
                 root /usr/share/nginx/html;

@@ -1,0 +1,41 @@
+suite: virtualservice
+set:
+  publicHost: rustdesk.example.com
+  oidcMock.authorizeUrl: https://oidc.example.com
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
+templates:
+  - templates/virtualservice.yaml
+tests:
+  - it: binds publicHost to the platform's Gateway
+    asserts:
+      - equal: { path: spec.gateways, value: ["istio-ingress/corp"] }
+      - equal: { path: spec.hosts, value: [rustdesk.example.com] }
+  - it: matches istio.hosts when set
+    set:
+      istio.hosts: [rustdesk.internal]
+    asserts:
+      - equal: { path: spec.hosts, value: [rustdesk.internal] }
+  - it: routes rendezvous, each relay pod, the API and the static files
+    set:
+      hbbr.replicas: 2
+    asserts:
+      - equal: { path: "spec.http[0].match", value: [{ uri: { prefix: "/ws/id" } }] }
+      - equal: { path: "spec.http[0].route[0].destination", value: { host: RELEASE-NAME-rustdesk-hbbs, port: { number: 21118 } } }
+      - equal: { path: "spec.http[1].match", value: [{ uri: { exact: "/ws/relay/0" } }] }
+      - equal: { path: "spec.http[1].route[0].destination.host", value: RELEASE-NAME-rustdesk-hbbr-0 }
+      - equal: { path: "spec.http[2].match", value: [{ uri: { exact: "/ws/relay/1" } }] }
+      - equal: { path: "spec.http[2].route[0].destination", value: { host: RELEASE-NAME-rustdesk-hbbr-1, port: { number: 21119 } } }
+      - equal: { path: "spec.http[3].match", value: [{ uri: { prefix: "/api/" } }, { uri: { prefix: "/ui" } }] }
+      - equal: { path: "spec.http[3].route[0].destination", value: { host: RELEASE-NAME-rustdesk-apiserver, port: { number: 21114 } } }
+      - equal: { path: "spec.http[4].match", value: [{ uri: { prefix: "/" } }] }
+      - equal: { path: "spec.http[4].route[0].destination", value: { host: RELEASE-NAME-rustdesk-webclient, port: { number: 80 } } }
+  - it: strips client X-Real-IP, sets requestHeaders and sets no timeout
+    set:
+      hbbr.replicas: 2
+      istio.requestHeaders: { x-forwarded-proto: https }
+    asserts:
+      - equal: { path: "spec.http[0].headers.request", value: { remove: [x-real-ip], set: { x-forwarded-proto: https } } }
+      - equal: { path: "spec.http[4].headers.request.remove", value: [x-real-ip] }
+      - notExists:
+          path: spec.http[0].timeout

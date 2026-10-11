@@ -8,9 +8,7 @@ Components:
 
 Database: {{ if .Values.postgresql.enabled }}bundled PostgreSQL ({{ include "rustdesk.componentName" (dict "context" . "component" "postgresql") }}){{ else }}external (database.url / database.existingSecret){{ end }}
 
-To access the web client, expose the webclient service:
-  kubectl port-forward svc/{{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }} 8080:80 -n {{ .Release.Namespace }}
-  Then open http://localhost:8080
+Clients connect through the Istio Gateway {{ .Values.istio.gateway }} at https://{{ index (.Values.istio.hosts | default (list .Values.publicHost)) 0 }}
 
 Service ports:
   hbbs: 21118 (WebSocket)
@@ -19,10 +17,3 @@ Service ports:
 Login is OIDC-only; there are no passwords. Nobody is admin until you promote
 someone: log in once through OIDC, then run
   kubectl exec -n {{ .Release.Namespace }} deploy/{{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }} -- /app/rustdesk-api admin promote <email>
-{{- if and .Values.ingress.enabled (not .Values.realIp.trustedProxies) }}
-
-WARNING: ingress.enabled is true but realIp.trustedProxies is empty, so every
-client is recorded with the Ingress controller's address and all clients share
-one registration rate limit. Set realIp.trustedProxies to the Ingress
-controller's address range and realIp.header to the header it sets.
-{{- end }}

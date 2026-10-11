@@ -2,6 +2,8 @@ suite: network policies
 templates:
   - templates/networkpolicy.yaml
 set:
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
   oidcMock.authorizeUrl: https://oidc.example.com
 tests:
   - it: renders one ingress-only policy per component

@@ -260,3 +260,16 @@ tests:
                 matchLabels:
                   app.kubernetes.io/name: webclient
                   app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: disables the Istio sidecar next to podAnnotations
+    template: templates/webclient-deployment.yaml
+    set:
+      webclient.podAnnotations:
+        test-annotation: "false"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+      - equal:
+          path: spec.template.metadata.annotations.test-annotation
+          value: "false"

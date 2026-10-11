@@ -224,10 +224,20 @@ tests:
           path: spec.template.metadata.annotations.test-annotation
           value: "true"
 
-  - it: omits annotations when empty
+  - it: disables the Istio sidecar by default
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+
+  - it: lets podAnnotations override the sidecar default
+    set:
+      hbbr.podAnnotations:
+        sidecar.istio.io/inject: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "true"
 
   - it: probes /livez and /readyz on the health port
     asserts:
@@ -267,3 +277,13 @@ tests:
       - equal:
           path: spec.template.metadata.labels.team
           value: infra
+
+  - it: passes trustedProxies as TRUSTED_PROXIES
+    set:
+      trustedProxies: [10.244.0.0/16, 192.0.2.0/24]
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TRUSTED_PROXIES
+            value: 10.244.0.0/16,192.0.2.0/24

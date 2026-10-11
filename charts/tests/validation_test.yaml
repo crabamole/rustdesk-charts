@@ -1,5 +1,7 @@
 suite: validation
 set:
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
   publicHost: rustdesk.example.com
 templates:
   - templates/database-secret.yaml
@@ -68,3 +70,43 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "RUSTDESK_KEY is no longer used"
+
+  - it: requires istio.gateway
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      istio.gateway: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: "istio.gateway is required"
+
+  - it: requires trustedProxies
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      trustedProxies: []
+    asserts:
+      - failedTemplate:
+          errorPattern: "trustedProxies is required"
+
+  - it: rejects TRUSTED_PROXIES set through a component env
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      hbbs.env.TRUSTED_PROXIES: 10.0.0.0/8
+    asserts:
+      - failedTemplate:
+          errorPattern: "hbbs.env.TRUSTED_PROXIES: set trustedProxies instead"
+
+  - it: rejects the removed ingress value
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      ingress.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: "ingress was removed"
+
+  - it: rejects the removed realIp value
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      realIp.header: X-Real-IP
+    asserts:
+      - failedTemplate:
+          errorPattern: "realIp was removed"

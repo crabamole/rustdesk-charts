@@ -14,10 +14,8 @@ spec:
     metadata:
       labels:
         {{- include "rustdesk.selectorLabels" (dict "context" . "component" "oidc-mock") | nindent 8 }}
-      {{- with .Values.oidcMock.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "rustdesk.podAnnotations" (dict "context" . "component" "oidcMock") | nindent 8 }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}

@@ -1,5 +1,7 @@
 suite: oidc-mock deployment
 set:
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
   oidcMock.authorizeUrl: https://oidc.example.com
   publicHost: rustdesk.example.com
 templates:
@@ -14,7 +16,17 @@ tests:
           path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
           value: "false"
 
-  - it: omits annotations when empty
+  - it: disables the Istio sidecar by default
     asserts:
-      - isNull:
-          path: spec.template.metadata.annotations
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+
+  - it: lets podAnnotations override the sidecar default
+    set:
+      oidcMock.podAnnotations:
+        sidecar.istio.io/inject: "true"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "true"

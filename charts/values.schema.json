@@ -5,6 +5,22 @@
     "nameOverride": { "type": "string" },
     "fullnameOverride": { "type": "string" },
     "publicHost": { "type": "string", "pattern": "^[^/\\s]*$" },
+    "istio": {
+      "type": "object",
+      "properties": {
+        "gateway": { "type": "string", "pattern": "^([^/\\s]+/[^/\\s]+)?$" },
+        "hosts": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "requestHeaders": { "type": "object", "additionalProperties": { "type": "string" } },
+        "gatewayPods": {
+          "type": "object",
+          "properties": {
+            "namespace": { "type": "string", "minLength": 1 },
+            "labels": { "type": "object", "additionalProperties": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "trustedProxies": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "global": {
       "type": "object",
       "properties": {

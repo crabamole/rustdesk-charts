@@ -271,3 +271,19 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["example.com/team"]
           value: remote-support
+  - it: disables the Istio sidecar and lets podAnnotations override it
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["sidecar.istio.io/inject"]
+          value: "false"
+  - it: passes trustedProxies as TRUSTED_PROXIES
+    template: templates/apiserver-deployment.yaml
+    set:
+      trustedProxies: [10.244.0.0/16, 192.0.2.0/24]
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: TRUSTED_PROXIES
+            value: 10.244.0.0/16,192.0.2.0/24

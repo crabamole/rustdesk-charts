@@ -1,23 +1,26 @@
 suite: notes
+set:
+  publicHost: rustdesk.example.com
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
 templates:
   - templates/NOTES.txt
 tests:
-  - it: warns when an Ingress fronts the web client without trusted proxies
-    set:
-      ingress.enabled: true
+  - it: names the gateway and the public URL clients connect through
     asserts:
       - matchRegexRaw:
-          pattern: "WARNING: ingress.enabled is true but realIp.trustedProxies is empty"
+          pattern: "istio-ingress/corp"
+      - matchRegexRaw:
+          pattern: "https://rustdesk.example.com"
 
-  - it: does not warn once the Ingress proxies are trusted
+  - it: prints the first istio.hosts entry
     set:
-      ingress.enabled: true
-      realIp.trustedProxies: ["10.0.0.0/8"]
+      istio.hosts: [rustdesk.internal, other.internal]
     asserts:
-      - notMatchRegexRaw:
-          pattern: "WARNING"
+      - matchRegexRaw:
+          pattern: "https://rustdesk.internal"
 
-  - it: does not warn without an Ingress
+  - it: no longer warns about an Ingress
     asserts:
       - notMatchRegexRaw:
           pattern: "WARNING"

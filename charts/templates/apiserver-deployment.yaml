@@ -22,11 +22,8 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
-        # oauth2.toml is read at startup (subPath mount); an existingSecret needs a manual restart.
-        checksum/oauth2: {{ include (print $.Template.BasePath "/hbbs-oauth2-configmap.yaml") . | sha256sum }}
-        {{- with .Values.apiserver.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- /* oauth2.toml is read at startup (subPath mount); an existingSecret needs a manual restart. */}}
+        {{- include "rustdesk.podAnnotations" (dict "context" . "component" "apiserver" "extra" (dict "checksum/oauth2" (include (print $.Template.BasePath "/hbbs-oauth2-configmap.yaml") . | sha256sum))) | nindent 8 }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
@@ -67,6 +64,8 @@ spec:
             - name: SSL_CERT_FILE
               value: "/etc/ssl/certs/extra/ca-bundle.crt"
             {{- end }}
+            - name: TRUSTED_PROXIES
+              value: {{ join "," .Values.trustedProxies | quote }}
             {{- range $key, $value := .Values.apiserver.env }}
             {{- if $value }}
             - name: {{ $key }}

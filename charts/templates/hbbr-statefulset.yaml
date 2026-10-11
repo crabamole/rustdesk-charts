@@ -20,10 +20,8 @@ spec:
         {{- with .Values.hbbr.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.hbbr.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "rustdesk.podAnnotations" (dict "context" . "component" "hbbr") | nindent 8 }}
     spec:
       serviceAccountName: {{ include "rustdesk.serviceAccountName" . }}
       {{- include "rustdesk.imagePullSecrets" . | nindent 6 }}
@@ -58,6 +56,8 @@ spec:
               value: /data
             - name: HEALTH_PORT
               value: "21122"
+            - name: TRUSTED_PROXIES
+              value: {{ join "," .Values.trustedProxies | quote }}
             {{- range $key, $value := .Values.hbbr.env }}
             {{- if ne $key "HEALTH_PORT" }}
             - name: {{ $key }}

@@ -102,12 +102,24 @@ webclient:
   # RUSTDESK_KEY comes from the keypair Secret; add other env vars here.
   env: {}
 
-# Client address recorded by hbbs, hbbr and the api-server. The web client nginx takes it from
-# `header` when the request comes from a trusted proxy, and passes only that to the backends.
-realIp:
-  header: X-Forwarded-For
-  # CIDRs of the proxies in front of the web client nginx. Empty: use the connecting address.
-  trustedProxies: []
+# Clients reach hbbs, hbbr, the api-server and the web client through this Istio Gateway
+# (owned by the platform; the chart renders only a VirtualService).
+istio:
+  # Required: <namespace>/<name> of the Gateway.
+  gateway: ""
+  # Hosts the VirtualService matches; empty means [publicHost]. Set when a proxy in front rewrites Host.
+  hosts: []
+  # Set on every request, e.g. x-forwarded-proto: https behind a plain-HTTP gateway listener.
+  requestHeaders: {}
+  # The gateway's pods, admitted by the NetworkPolicies.
+  gatewayPods:
+    namespace: istio-system
+    labels:
+      istio: ingressgateway
+
+# Required: CIDRs of the gateway pods and of every proxy in front of the gateway. hbbs, hbbr and the
+# api-server believe X-Forwarded-For only from these addresses.
+trustedProxies: []
 
 # Ingress-only NetworkPolicies: each component accepts traffic only from the
 # components that call it; the web client (and the OIDC mock) accept any source.
@@ -120,18 +132,6 @@ serviceAccount:
   create: true
   # Name to use; defaults to the release's full name.
   name: ""
-
-# Optional Ingress for the whole service (one host to the web client, which
-# routes /ws/id, /ws/relay/<n>, /api and /ui itself). Remote sessions are long-lived
-# WebSockets: raise the controller's idle timeouts (see README).
-ingress:
-  enabled: false
-  className: ""
-  host: ""
-  annotations: {}
-  tls:
-    # Secret with the certificate; empty means no TLS section (TLS terminated elsewhere).
-    secretName: ""
 
 # Extra CA certificates to trust (PEM bundle) for the apiserver's outbound
 # HTTPS calls (e.g. OIDC token exchange with a corporate CA).

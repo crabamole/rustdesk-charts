@@ -192,6 +192,14 @@ Settings the web client and hbbs cannot work without.
 {{- if .Values.webclient.env.RUSTDESK_KEY -}}
 {{- fail "webclient.env.RUSTDESK_KEY is no longer used: the web client reads the public key from the keypair Secret; remove it" -}}
 {{- end -}}
+{{- range $k := list "ingress" "realIp" -}}
+{{- if hasKey $.Values $k -}}{{- fail (printf "%s was removed: clients reach the servers through the Istio Gateway (see UPGRADING.md)" $k) -}}{{- end -}}
+{{- end -}}
+{{- if not .Values.istio.gateway -}}{{- fail "istio.gateway is required: the <namespace>/<name> of the Istio Gateway clients connect through" -}}{{- end -}}
+{{- if not .Values.trustedProxies -}}{{- fail "trustedProxies is required: CIDRs of the gateway pods and any proxy in front of them" -}}{{- end -}}
+{{- range $c := list "hbbs" "hbbr" "apiserver" -}}
+{{- if hasKey (index $.Values $c "env") "TRUSTED_PROXIES" -}}{{- fail (printf "%s.env.TRUSTED_PROXIES: set trustedProxies instead" $c) -}}{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -301,4 +309,13 @@ hbbr readiness URLs hbbs polls, in the same order as rustdesk.relayUrls.
 {{- $urls = append $urls (printf "http://%s-%d:21122/readyz" $name $i) -}}
 {{- end -}}
 {{- join "," $urls -}}
+{{- end -}}
+
+{{/*
+Pod annotations: Istio sidecars off (the gateway reaches pods in plain text), then the
+component's podAnnotations, then `extra` (checksums).
+*/}}
+{{- define "rustdesk.podAnnotations" -}}
+{{- $a := merge (dict) (.extra | default dict) (index .context.Values .component "podAnnotations" | default dict) (dict "sidecar.istio.io/inject" "false") -}}
+{{- toYaml $a -}}
 {{- end -}}

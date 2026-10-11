@@ -3,6 +3,8 @@ suite: keypair validation
 templates:
   - templates/database-secret.yaml
 set:
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
   oidcMock.authorizeUrl: https://oidc.example.com
   publicHost: rustdesk.example.com
 release:

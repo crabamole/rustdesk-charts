@@ -1,0 +1,34 @@
+{{- $hbbr := include "rustdesk.componentName" (dict "context" . "component" "hbbr") }}
+{{- $headers := dict "remove" (list "x-real-ip") }}
+{{- with .Values.istio.requestHeaders }}{{- $_ := set $headers "set" . }}{{- end }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "rustdesk.fullname" . }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "webclient") | nindent 4 }}
+spec:
+  gateways:
+    - {{ .Values.istio.gateway }}
+  hosts:
+    {{- toYaml (.Values.istio.hosts | default (list .Values.publicHost)) | nindent 4 }}
+  # No timeouts: devices and sessions are WebSockets open for hours.
+  http:
+    - match: [{ uri: { prefix: /ws/id } }]
+      headers: { request: {{ toJson $headers }} }
+      route:
+        - destination: { host: {{ include "rustdesk.componentName" (dict "context" . "component" "hbbs") }}, port: { number: 21118 } }
+    {{- range $i := until (int .Values.hbbr.replicas) }}
+    - match: [{ uri: { exact: /ws/relay/{{ $i }} } }]
+      headers: { request: {{ toJson $headers }} }
+      route:
+        - destination: { host: {{ $hbbr }}-{{ $i }}, port: { number: 21119 } }
+    {{- end }}
+    - match: [{ uri: { prefix: /api/ } }, { uri: { prefix: /ui } }]
+      headers: { request: {{ toJson $headers }} }
+      route:
+        - destination: { host: {{ include "rustdesk.componentName" (dict "context" . "component" "apiserver") }}, port: { number: 21114 } }
+    - match: [{ uri: { prefix: / } }]
+      headers: { request: {{ toJson $headers }} }
+      route:
+        - destination: { host: {{ include "rustdesk.componentName" (dict "context" . "component" "webclient") }}, port: { number: 80 } }
