@@ -3,7 +3,9 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
-## Unreleased
+## 0.11.0
+
+Same images as 0.10.0 (rustdesk-server 1.1.16-5, rustdesk-api 3.6.0, web client 1.4.9-9).
 
 - **The chart routes the OIDC mock** through `istio.gateway`, on the host of `oidcMock.authorizeUrl`
   (or `oidcMock.hosts` when a proxy in front rewrites `Host`). Delete a VirtualService you wrote for the
