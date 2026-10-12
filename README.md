@@ -85,6 +85,9 @@ The chart's default images:
 
 `global.imageRegistry` and `global.imagePullSecrets` apply to all of them.
 
+The native client installers for the same release are in `ghcr.io/crabamole/rustdesk/installers:1.4.9-9`
+(not deployed by the chart; see the rustdesk [install guide](https://github.com/crabamole/rustdesk/blob/master/docs/crustdesk-install.md)).
+
 ## Exposing it
 
 Clients reach the chart through an Istio Gateway that the platform owns (listener, TLS
