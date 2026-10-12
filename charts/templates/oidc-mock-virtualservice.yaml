@@ -1,0 +1,17 @@
+{{- if .Values.oidcMock.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ include "rustdesk.componentName" (dict "context" . "component" "oidc-mock") }}
+  labels:
+    {{- include "rustdesk.labels" (dict "context" . "component" "oidc-mock") | nindent 4 }}
+spec:
+  gateways:
+    - {{ .Values.istio.gateway }}
+  # Its own host: the mock's paths would otherwise mix with the web client's. Istio rejects a port in hosts.
+  hosts:
+    {{- toYaml (.Values.oidcMock.hosts | default (list (first (splitList ":" (urlParse .Values.oidcMock.authorizeUrl).host)))) | nindent 4 }}
+  http:
+    - route:
+        - destination: { host: {{ include "rustdesk.componentName" (dict "context" . "component" "oidc-mock") }}, port: { number: {{ .Values.oidcMock.port }} } }
+{{- end }}

@@ -1,0 +1,30 @@
+suite: oidc mock virtualservice
+set:
+  publicHost: rustdesk.example.com
+  oidcMock.authorizeUrl: https://oidc.example.com
+  istio.gateway: istio-ingress/corp
+  trustedProxies: ["10.244.0.0/16"]
+templates:
+  - templates/oidc-mock-virtualservice.yaml
+tests:
+  - it: routes the authorizeUrl host to the mock through the platform's Gateway
+    asserts:
+      - equal: { path: spec.gateways, value: ["istio-ingress/corp"] }
+      - equal: { path: spec.hosts, value: [oidc.example.com] }
+      - equal: { path: "spec.http[0].route[0].destination", value: { host: RELEASE-NAME-rustdesk-oidc-mock, port: { number: 12017 } } }
+  - it: drops the port of authorizeUrl, Istio rejects it in hosts
+    set:
+      oidcMock.authorizeUrl: http://oidc.example.com:30080
+    asserts:
+      - equal: { path: spec.hosts, value: [oidc.example.com] }
+  - it: matches oidcMock.hosts when set
+    set:
+      oidcMock.hosts: [oidc.internal]
+    asserts:
+      - equal: { path: spec.hosts, value: [oidc.internal] }
+  - it: is not rendered without the mock
+    set:
+      oidcMock.enabled: false
+      hbbs.oauth2.existingSecret: corp-oidc
+    asserts:
+      - hasDocuments: { count: 0 }

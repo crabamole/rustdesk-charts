@@ -146,6 +146,8 @@ oidcMock:
   # Required when oidcMock is enabled.
   # Example: "https://oidc.example.com"
   authorizeUrl: ""
+  # Hosts its VirtualService matches; empty means the host of authorizeUrl. Set when a proxy in front rewrites Host.
+  hosts: []
   image:
     registry: ghcr.io
     repository: rophy/oidc-mock

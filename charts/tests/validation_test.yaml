@@ -6,10 +6,17 @@ set:
 templates:
   - templates/database-secret.yaml
 tests:
-  - it: fails without any OIDC configuration (login is OIDC-only)
+  - it: requires an authorize URL while the mock is enabled (the default)
     asserts:
       - failedTemplate:
-          errorPattern: "login is OIDC-only"
+          errorPattern: "oidcMock.authorizeUrl is required while oidcMock.enabled"
+
+  - it: rejects an enabled mock without an authorize URL next to an IdP Secret
+    set:
+      hbbs.oauth2.existingSecret: corp-oidc
+    asserts:
+      - failedTemplate:
+          errorPattern: "set oidcMock.enabled: false when using your own IdP"
 
   - it: accepts the quickstart mock with an authorize URL
     set:

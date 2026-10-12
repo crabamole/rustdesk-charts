@@ -3,6 +3,15 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## Unreleased
+
+- **The chart routes the OIDC mock** through `istio.gateway`, on the host of `oidcMock.authorizeUrl`
+  (or `oidcMock.hosts` when a proxy in front rewrites `Host`). Delete a VirtualService you wrote for the
+  mock before upgrading; the chart's has the same name.
+- **`oidcMock.enabled` (default `true`) now requires `oidcMock.authorizeUrl`.** With your own IdP
+  (`hbbs.oauth2.existingSecret`), set `oidcMock.enabled: false`; the install fails otherwise instead of
+  deploying an unused mock.
+
 ## 0.10.0
 
 0.10.0 ships rustdesk-server 1.1.16-5 and rustdesk-api 3.6.0 (web client 1.4.9-9 unchanged).

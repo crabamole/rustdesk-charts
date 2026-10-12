@@ -71,6 +71,10 @@ oidcMock:
   authorizeUrl: "https://oidc.example.com"
 ```
 
+The chart routes the mock's own host (from `oidcMock.authorizeUrl`, without the port) through the same
+Gateway; point that name at the gateway too. If a proxy in front rewrites `Host`, list what the gateway
+receives in `oidcMock.hosts`, as with `istio.hosts`.
+
 ## Images
 
 The chart's default images:

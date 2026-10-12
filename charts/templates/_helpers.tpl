@@ -174,6 +174,9 @@ Both apps call this, so they always point at the same database.
 Login is OIDC-only and the api-server refuses to start without a provider file.
 */}}
 {{- define "rustdesk.validateOidc" -}}
+{{- if and .Values.oidcMock.enabled (not .Values.oidcMock.authorizeUrl) -}}
+{{- fail "oidcMock.authorizeUrl is required while oidcMock.enabled; set it, or set oidcMock.enabled: false when using your own IdP (hbbs.oauth2.existingSecret)" -}}
+{{- end -}}
 {{- if not (include "rustdesk.oauth2Enabled" .) -}}
 {{- fail "login is OIDC-only: set hbbs.oauth2.existingSecret (your IdP; see README 'OIDC provider') or oidcMock.authorizeUrl (quickstart mock)" -}}
 {{- end -}}
