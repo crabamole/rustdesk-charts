@@ -1,6 +1,8 @@
 # rustdesk-charts
 
-Helm charts for deploying RustDesk OSS server components, using forked images that enable web client and WebSocket support.
+Helm chart that deploys the server side of [crabamole](https://github.com/crabamole):
+remote desktop from the browser and the RustDesk apps, behind your own single sign-on,
+through one HTTPS host.
 
 ## Components
 
@@ -10,13 +12,6 @@ Helm charts for deploying RustDesk OSS server components, using forked images th
 | hbbr | `ghcr.io/crabamole/rustdesk-server` | [crabamole/rustdesk-server](https://github.com/crabamole/rustdesk-server) | Relay server |
 | web-client | `ghcr.io/crabamole/rustdesk/web-client` | [crabamole/rustdesk](https://github.com/crabamole/rustdesk) | Browser-based remote desktop client |
 | api-server | `ghcr.io/crabamole/rustdesk-api` | [crabamole/rustdesk-api](https://github.com/crabamole/rustdesk-api) | REST/OIDC API server, owns the database schema |
-
-## Why forked images?
-
-The RustDesk web client and WebSocket-based peer registration were [removed from the upstream OSS builds](https://github.com/rustdesk/rustdesk) and are now only available in RustDesk Server Pro. The forked repos restore these features for the OSS server:
-
-- [crabamole/rustdesk](https://github.com/crabamole/rustdesk) — restores the web client with OSS server compatibility patches
-- [crabamole/rustdesk-server](https://github.com/crabamole/rustdesk-server) — enables WebSocket peer registration for web client connectivity
 
 ## Prerequisites
 
@@ -31,8 +26,9 @@ The chart requires a Kubernetes secret containing the hbbs keypair. hbbs signs w
 
 ```bash
 # Generate keypair
+# <tag>: any rustdesk-server release, e.g. the chart's hbbs.image.tag
 output=$(docker run --rm --entrypoint /usr/local/bin/rustdesk-utils \
-  ghcr.io/crabamole/rustdesk-server:1.1.16-5 genkeypair)
+  ghcr.io/crabamole/rustdesk-server:<tag> genkeypair)
 public_key=$(echo "$output" | grep 'Public Key:' | awk '{print $3}')
 secret_key=$(echo "$output" | grep 'Secret Key:' | awk '{print $3}')
 
@@ -50,8 +46,10 @@ echo "$public_key"
 ## Usage
 
 ```bash
-helm install rustdesk ./charts -n rustdesk -f values-override.yaml
+helm install rustdesk oci://ghcr.io/crabamole/charts/rustdesk -n rustdesk -f values-override.yaml
 ```
+
+From a checkout of this repo, use `./charts` instead of the `oci://` reference.
 
 Create a `values-override.yaml` with your deployment-specific settings:
 
@@ -77,20 +75,23 @@ receives in `oidcMock.hosts`, as with `istio.hosts`.
 
 ## Images
 
-The chart's default images:
+The chart deploys these images. Each chart release pins their tags in
+[`charts/values.yaml`](charts/values.yaml) (`<component>.image.tag`); to see them for a
+published chart, run `helm show values oci://ghcr.io/crabamole/charts/rustdesk --version <chart version>`.
 
 | Image | Used by |
 |-------|---------|
-| `ghcr.io/crabamole/rustdesk-server:1.1.16-5` | hbbs, hbbr |
-| `ghcr.io/crabamole/rustdesk-api:3.6.0` | api-server |
-| `ghcr.io/crabamole/rustdesk/web-client:1.4.9-9` | web client |
-| `docker.io/library/postgres:17.11-trixie` | bundled PostgreSQL (`postgresql.enabled`) |
-| `ghcr.io/rophy/oidc-mock:20260913-34fdbaf` | OIDC mock (`oidcMock.enabled`) |
+| `ghcr.io/crabamole/rustdesk-server` | hbbs, hbbr |
+| `ghcr.io/crabamole/rustdesk-api` | api-server |
+| `ghcr.io/crabamole/rustdesk/web-client` | web client |
+| `docker.io/library/postgres` | bundled PostgreSQL (`postgresql.enabled`) |
+| `ghcr.io/rophy/oidc-mock` | OIDC mock (`oidcMock.enabled`) |
 
 `global.imageRegistry` and `global.imagePullSecrets` apply to all of them.
 
-The native client installers for the same release are in `ghcr.io/crabamole/rustdesk/installers:1.4.9-9`
-(not deployed by the chart; see the rustdesk [deployment guide](https://github.com/crabamole/rustdesk/blob/master/docs/crustdesk-deployment.md)).
+The native client installers are published as `ghcr.io/crabamole/rustdesk/installers:<tag>`,
+with the same tag as the web client (not deployed by the chart; see the rustdesk
+[deployment guide](https://github.com/crabamole/rustdesk/blob/master/docs/crustdesk-deployment.md)).
 
 ## Exposing it
 
@@ -413,7 +414,7 @@ e.g. `info,access=off` drops the access lines.
 
 ### Uninstalling and rolling back
 
-`helm uninstall` and `helm rollback` (e.g. back to a 0.2.x release) do **not**
+`helm uninstall` and `helm rollback` (e.g. back to an older chart release) do **not**
 delete two things that `helm install`/`helm upgrade` created:
 
 - the bundled database's PVC, `data-<fullname>-postgresql-0` (from the
