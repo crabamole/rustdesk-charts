@@ -191,6 +191,9 @@ apiserver:
     # set http://... for a plain-HTTP setup (relay URLs then use ws://).
     PUBLIC_URL: ""
     OAUTH2_CREATE_USER: "1"
+    # Y: a user logged in to cRustDesk on a device opens it without its password
+    # (devices need wss:// to hbbs with a valid certificate). Off when empty.
+    SAME_USER_ACCESS: ""
     MAX_DATABASE_CONNECTIONS: "20"
   podAnnotations: {}
   podLabels: {}

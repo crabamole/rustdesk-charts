@@ -288,3 +288,23 @@ tests:
           content:
             name: TRUSTED_PROXIES
             value: 10.244.0.0/16,192.0.2.0/24
+
+  - it: leaves same-user access off by default
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SAME_USER_ACCESS
+            value: "Y"
+
+  - it: passes SAME_USER_ACCESS to the api-server
+    template: templates/apiserver-deployment.yaml
+    set:
+      apiserver.env.SAME_USER_ACCESS: "Y"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SAME_USER_ACCESS
+            value: "Y"
