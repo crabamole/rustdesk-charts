@@ -14,6 +14,15 @@ tests:
           path: data["nginx.conf"]
           pattern: 'add_header Cache-Control "no-cache, must-revalidate";'
 
+  - it: refuses framing by other sites and MIME sniffing
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'add_header X-Frame-Options SAMEORIGIN;'
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: 'add_header X-Content-Type-Options nosniff;'
+
   - it: proxies nothing, the VirtualService routes to the backends
     asserts:
       - notMatchRegex:

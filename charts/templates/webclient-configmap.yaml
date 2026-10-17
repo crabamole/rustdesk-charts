@@ -43,6 +43,9 @@ data:
                 root /usr/share/nginx/html;
                 index index.html;
                 add_header Cache-Control "no-cache, must-revalidate";
+                # Only our own pages may frame the web client (clickjacking).
+                add_header X-Frame-Options SAMEORIGIN;
+                add_header X-Content-Type-Options nosniff;
             }
         }
     }
