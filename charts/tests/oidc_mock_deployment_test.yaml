@@ -7,6 +7,12 @@ set:
 templates:
   - templates/oidc-mock-deployment.yaml
 tests:
+  - it: declares runAsNonRoot, as the restricted Pod Security level requires
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+
   - it: renders pod annotations
     set:
       oidcMock.podAnnotations:

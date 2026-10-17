@@ -10,6 +10,13 @@ templates:
   - templates/postgresql-secret.yaml
   - templates/database-secret.yaml
 tests:
+  - it: declares runAsNonRoot, as the restricted Pod Security level requires
+    template: templates/postgresql-statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
   - it: renders pod annotations
     template: templates/postgresql-statefulset.yaml
     set:
