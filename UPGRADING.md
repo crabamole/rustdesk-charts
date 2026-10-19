@@ -3,6 +3,40 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.12.0
+
+0.12.0 ships rustdesk-server 1.1.16-6, rustdesk-api 3.7.0 and web client 1.5.0-2. The matching
+native clients are cRustDesk 1.5.0-2.
+
+- **Upgrade the devices to cRustDesk 1.5.0-2 first.** rustdesk-api 3.7.0 accepts a device's own calls
+  (heartbeat, system info, connection, file and alarm records) only when the device signs them with
+  the key it registered with hbbs. cRustDesk 1.5.0-1 and earlier and stock RustDesk on devices get 401:
+  no heartbeat answer (no policy, no console disconnect) and no audit records. 1.5.0-2 works with the
+  0.11.0 servers, so upgrade the devices before `helm upgrade`. Viewers (the client variant) send no
+  device calls and are not affected.
+- **A device keeps its registered key.** hbbs 1.1.16-6 refuses another key for a known device ID from
+  any address (before, it accepted one from the address of the last registration). A device that
+  lost its configuration (an uninstall that removed it, a restored disk) keeps its ID and shows "This
+  device's key changed". To let it register again, either:
+  - its owner logs in on the device with "Log in to keep this ID" (the user of the device's last
+    login, still logged in: a logout ends that), or
+  - an admin resets the key: Devices page, "Reset key", or
+    `kubectl exec deploy/<release>-apiserver -- /app/rustdesk-api peer reset-key <id>`.
+
+  Clients before 1.5.0-2 log `unknown RegisterPkResponse` and stay offline until the reset.
+- **The api-server adds the column `peer.approved_pk` when it starts (migration 0017); hbbs 1.1.16-6
+  reads it.** The chart upgrades both together; outside the chart, upgrade the api-server first.
+- **New, nothing to do:** the audit page disconnects a live connection and lists admin changes
+  (console log); same-user access stays off until `apiserver.env.SAME_USER_ACCESS: "Y"`.
+- **rustdesk-api 3.7.0 removes** `/api/software/releases`, `/api/software/download` and
+  `/api/oidc/settings` (they answer 404; our clients do not call them), and users can no longer change
+  their own email; admins still can.
+- **The web client's pages refuse framing by other sites** (`X-Frame-Options: SAMEORIGIN`). A portal that
+  shows the web client in an iframe from another origin must link to it instead.
+- **PostgreSQL and the OIDC mock declare `runAsNonRoot`**, for namespaces at the restricted Pod Security
+  level.
+- **Web client 1.5.0-2:** while logged out, a login button takes the place of the remote ID field.
+
 ## 0.11.0
 
 Same images as 0.10.0 (rustdesk-server 1.1.16-5, rustdesk-api 3.6.0, web client 1.4.9-9).
