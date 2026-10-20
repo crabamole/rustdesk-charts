@@ -5,13 +5,13 @@ listed need nothing beyond the upgrade itself.
 
 ## 0.12.0
 
-0.12.0 ships rustdesk-server 1.1.16-6, rustdesk-api 3.7.0 and web client 1.5.0-2. The matching
-native clients are cRustDesk 1.5.0-2.
+0.12.0 ships rustdesk-server 1.1.16-6, rustdesk-api 3.7.0 and web client / clients 1.5.0-3. The matching
+native clients are cRustDesk 1.5.0-3.
 
-- **Upgrade the devices to cRustDesk 1.5.0-2 first.** rustdesk-api 3.7.0 accepts a device's own calls
+- **Upgrade the devices to cRustDesk 1.5.0-3 first.** rustdesk-api 3.7.0 accepts a device's own calls
   (heartbeat, system info, connection, file and alarm records) only when the device signs them with
   the key it registered with hbbs. cRustDesk 1.5.0-1 and earlier and stock RustDesk on devices get 401:
-  no heartbeat answer (no policy, no console disconnect) and no audit records. 1.5.0-2 works with the
+  no heartbeat answer (no policy, no console disconnect) and no audit records. 1.5.0-3 works with the
   0.11.0 servers, so upgrade the devices before `helm upgrade`. Viewers (the client variant) send no
   device calls and are not affected.
 - **A device keeps its registered key.** hbbs 1.1.16-6 refuses another key for a known device ID from
@@ -36,6 +36,14 @@ native clients are cRustDesk 1.5.0-2.
 - **PostgreSQL and the OIDC mock declare `runAsNonRoot`**, for namespaces at the restricted Pod Security
   level.
 - **Web client 1.5.0-2:** while logged out, a login button takes the place of the remote ID field.
+- **Clients list only their own devices.** `GET /api/peers` returns, for every user including admins,
+  only the devices that user is logged in on; `GET /api/users` returns only the caller; device counts
+  and CPU statistics are admin-only. The console uses the admin-only `/api/peer-list` and
+  `/api/user-list`. A user of a stock client (which never records an owner) sees an empty device list.
+  Scripts that used `/api/peers` or `/api/users` with an admin token to list everything must switch to
+  `/api/peer-list` / `/api/user-list`.
+- **Clients 1.5.0-3:** no automatic STUN/DNS lookups of public hosts in websocket mode; the device build
+  no longer answers LAN discovery; `cRustDesk --password` enforces the UI's password rule.
 
 ## 0.11.0
 
