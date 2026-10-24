@@ -3,6 +3,18 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.13.0
+
+0.13.0 ships rustdesk-api 3.8.0 and web client / clients 1.5.0-4; rustdesk-server stays 1.1.16-6.
+
+- **Upgrade viewers and devices to cRustDesk 1.5.0-4 together.** 1.5.0-4 sends viewer clipboard text
+  to a device only when a program on the device reads the clipboard. With an older client on either
+  side, pasting text into the device does not work.
+- rustdesk-api 3.8.0 adds the clipboard text audit (`POST /api/audit/clipboard`, migration 0018) and a
+  Clipboard tab in the console. It runs its migration at start; nothing else to do. 1.5.0-4 devices
+  with an older api-server drop their clipboard records; 3.8.0 works with older clients, which send
+  none.
+
 ## 0.12.0
 
 0.12.0 ships rustdesk-server 1.1.16-6, rustdesk-api 3.7.0 and web client / clients 1.5.0-3. The matching
