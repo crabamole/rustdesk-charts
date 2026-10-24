@@ -1,7 +1,7 @@
 apiVersion: v2
 name: rustdesk
 description: RustDesk OSS remote desktop stack (hbbs, hbbr, webclient)
-version: 0.13.0
+version: 0.13.1
 appVersion: "1.5.0"
 type: application
 kubeVersion: ">=1.24.0-0"

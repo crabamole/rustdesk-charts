@@ -3,6 +3,11 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.13.1
+
+0.13.1 ships rustdesk-api 3.8.1: the console footer and tab title name this project and link
+the source, upstream and the license. Nothing to do beyond the upgrade.
+
 ## 0.13.0
 
 0.13.0 ships rustdesk-api 3.8.0 and web client / clients 1.5.0-4; rustdesk-server stays 1.1.16-6.

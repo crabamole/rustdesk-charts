@@ -177,7 +177,7 @@ apiserver:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-api
-    tag: "3.8.0"
+    tag: "3.8.1"
     pullPolicy: IfNotPresent
   resources:
     limits:
