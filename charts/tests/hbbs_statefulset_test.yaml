@@ -526,7 +526,7 @@ tests:
   - it: passes DEVICE_ADMISSION Y when deviceAdmission is on
     template: templates/hbbs-statefulset.yaml
     set:
-      deviceAdmission: true
+      deviceAdmission.enabled: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env

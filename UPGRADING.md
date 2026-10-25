@@ -5,7 +5,8 @@ listed need nothing beyond the upgrade itself.
 
 ## Unreleased
 
-The chart has a `deviceAdmission` switch (default `false`; see README "Device admission"). It
+The chart has a `deviceAdmission.enabled` switch (default `false`; see README "Device admission").
+`deviceAdmission.webhook.url` and `deviceAdmission.webhook.keySecret` set an admission webhook. It
 needs rustdesk-server, rustdesk-api and cRustDesk versions with device admission. Those versions
 are filled in at release. Leave the switch off until they are deployed.
 

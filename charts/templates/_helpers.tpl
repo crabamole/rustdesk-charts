@@ -207,6 +207,13 @@ Settings the web client and hbbs cannot work without.
 {{- range $c := list "hbbs" "apiserver" -}}
 {{- if hasKey (index $.Values $c "env") "DEVICE_ADMISSION" -}}{{- fail (printf "%s.env.DEVICE_ADMISSION: set deviceAdmission instead" $c) -}}{{- end -}}
 {{- end -}}
+{{- range $k := list "ADMISSION_WEBHOOK_URL" "ADMISSION_WEBHOOK_KEY" -}}
+{{- if hasKey $.Values.apiserver.env $k -}}{{- fail (printf "apiserver.env.%s: set deviceAdmission.webhook instead" $k) -}}{{- end -}}
+{{- end -}}
+{{- with .Values.deviceAdmission.webhook.url -}}
+{{- if not $.Values.deviceAdmission.enabled -}}{{- fail "deviceAdmission.webhook needs deviceAdmission.enabled: true" -}}{{- end -}}
+{{- if not $.Values.deviceAdmission.webhook.keySecret -}}{{- fail "deviceAdmission.webhook.keySecret is required when deviceAdmission.webhook.url is set" -}}{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -234,6 +241,35 @@ Secret apart from offline rendering without cluster-wide permissions.
 {{- end -}}
 {{- else if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
 {{- fail (printf "keypair Secret %s not found in namespace %s; create it first (see README 'Generate keypair')" $name .Release.Namespace) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Checks the admission webhook key Secret like the keypair Secret (offline
+rendering skips it). Runs only when deviceAdmission.webhook.url is set.
+*/}}
+{{- define "rustdesk.validateWebhookKey" -}}
+{{- if .Values.deviceAdmission.webhook.url -}}
+{{- $name := .Values.deviceAdmission.webhook.keySecret -}}
+{{- $secret := lookup "v1" "Secret" .Release.Namespace $name -}}
+{{- if $secret -}}
+{{- $data := $secret.data | default dict -}}
+{{- range list "id_ed25519" "id_ed25519.pub" -}}
+{{- if not (hasKey $data .) -}}
+{{- fail (printf "admission webhook key Secret %s has no key %q (create it from `rustdesk-api admission keygen`)" $name .) -}}
+{{- end -}}
+{{- end -}}
+{{- $pub := index $data "id_ed25519.pub" | b64dec | trim | b64dec -}}
+{{- $priv := index $data "id_ed25519" | b64dec | trim | b64dec -}}
+{{- if or (ne (len $pub) 32) (ne (len $priv) 64) -}}
+{{- fail (printf "admission webhook key Secret %s: expected base64 ed25519 keys (32-byte public, 64-byte private); generate them with rustdesk-api admission keygen" $name) -}}
+{{- end -}}
+{{- if ne (substr 32 64 $priv) $pub -}}
+{{- fail (printf "admission webhook key Secret %s: the public key does not belong to the private key" $name) -}}
+{{- end -}}
+{{- else if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
+{{- fail (printf "admission webhook key Secret %s not found in namespace %s; create it first (see README 'Admission webhook')" $name .Release.Namespace) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

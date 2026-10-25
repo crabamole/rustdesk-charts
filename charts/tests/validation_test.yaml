@@ -154,3 +154,29 @@ tests:
       trustedProxies: ["not-a-cidr"]
     asserts:
       - failedTemplate: {}
+
+  - it: refuses a webhook URL without a key Secret
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      deviceAdmission.enabled: true
+      deviceAdmission.webhook.url: https://inventory.example.com/admission
+    asserts:
+      - failedTemplate:
+          errorPattern: "deviceAdmission.webhook.keySecret is required"
+
+  - it: refuses a webhook while admission is off
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      deviceAdmission.webhook.url: https://inventory.example.com/admission
+      deviceAdmission.webhook.keySecret: admission-webhook-key
+    asserts:
+      - failedTemplate:
+          errorPattern: "deviceAdmission.webhook needs deviceAdmission.enabled"
+
+  - it: rejects ADMISSION_WEBHOOK_URL set through the api-server env
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      apiserver.env.ADMISSION_WEBHOOK_URL: https://inventory.example.com/admission
+    asserts:
+      - failedTemplate:
+          errorPattern: "apiserver.env.ADMISSION_WEBHOOK_URL: set deviceAdmission.webhook instead"

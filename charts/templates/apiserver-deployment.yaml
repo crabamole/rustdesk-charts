@@ -67,7 +67,16 @@ spec:
             - name: TRUSTED_PROXIES
               value: {{ join "," .Values.trustedProxies | quote }}
             - name: DEVICE_ADMISSION
-              value: {{ ternary "Y" "N" .Values.deviceAdmission | quote }}
+              value: {{ ternary "Y" "N" .Values.deviceAdmission.enabled | quote }}
+            {{- with .Values.deviceAdmission.webhook.url }}
+            - name: ADMISSION_WEBHOOK_URL
+              value: {{ . | quote }}
+            - name: ADMISSION_WEBHOOK_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.deviceAdmission.webhook.keySecret }}
+                  key: id_ed25519
+            {{- end }}
             - name: PUBLIC_URL
               value: {{ include "rustdesk.publicUrl" . | quote }}
             {{- range $key, $value := .Values.apiserver.env }}

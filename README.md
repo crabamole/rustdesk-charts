@@ -366,7 +366,7 @@ next heartbeat, within about 15 seconds.
 
 ## Device admission
 
-`deviceAdmission: true` (default `false`) sets `DEVICE_ADMISSION=Y` on hbbs and the api-server.
+`deviceAdmission.enabled: true` (default `false`) sets `DEVICE_ADMISSION=Y` on hbbs and the api-server.
 A device that registers then waits as pending until an admin admits it; only admitted devices
 can be controlled. Devices registered before the switch stay admitted.
 
@@ -375,6 +375,23 @@ can be controlled. Devices registered before the switch stay admitted.
 - A reject or admit takes effect within about 5 seconds.
 - A stock RustDesk viewer shows only its own error when a device is not admitted. A cRustDesk
   device shows "Waiting for remote control approval".
+
+### Admission webhook
+
+A webhook can admit or reject pending devices. The api-server signs each request. The receiver
+checks the signature with the public key.
+
+1. Create the key in the api-server pod:
+   `kubectl exec deploy/<release>-rustdesk-apiserver -- /app/rustdesk-api admission keygen`
+2. Store it in a Secret:
+   `kubectl create secret generic admission-webhook-key --from-literal=id_ed25519=<private> --from-literal=id_ed25519.pub=<public>`
+3. Set `deviceAdmission.webhook.url` and `deviceAdmission.webhook.keySecret` (needs
+   `deviceAdmission.enabled: true`).
+4. Give the receiver the public key. Read it on the console Devices page, or run
+   `rustdesk-api admission pubkey` in the api-server pod.
+
+The chart refuses a URL without a key Secret. On install it also checks that the Secret holds a
+valid key pair. For the request format, see `docs/admission-webhook.md` in the rustdesk-api repository.
 
 ## Database
 

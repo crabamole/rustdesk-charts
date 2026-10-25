@@ -30,6 +30,19 @@
         ]
       }
     },
+    "deviceAdmission": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "webhook": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string" },
+            "keySecret": { "type": "string" }
+          }
+        }
+      }
+    },
     "global": {
       "type": "object",
       "properties": {

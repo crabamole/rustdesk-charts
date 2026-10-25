@@ -321,10 +321,42 @@ tests:
   - it: passes DEVICE_ADMISSION Y when deviceAdmission is on
     template: templates/apiserver-deployment.yaml
     set:
-      deviceAdmission: true
+      deviceAdmission.enabled: true
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: DEVICE_ADMISSION
             value: "Y"
+
+  - it: passes the admission webhook URL and key
+    template: templates/apiserver-deployment.yaml
+    set:
+      deviceAdmission.enabled: true
+      deviceAdmission.webhook.url: https://inventory.example.com/admission
+      deviceAdmission.webhook.keySecret: admission-webhook-key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ADMISSION_WEBHOOK_URL
+            value: https://inventory.example.com/admission
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ADMISSION_WEBHOOK_KEY
+            valueFrom:
+              secretKeyRef:
+                name: admission-webhook-key
+                key: id_ed25519
+
+  - it: sets no webhook env without a URL
+    template: templates/apiserver-deployment.yaml
+    set:
+      deviceAdmission.enabled: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          any: true
+          content:
+            name: ADMISSION_WEBHOOK_URL
