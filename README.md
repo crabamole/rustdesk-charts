@@ -382,9 +382,9 @@ A webhook can admit or reject pending devices. The api-server signs each request
 checks the signature with the public key.
 
 1. Create the key in the api-server pod:
-   `kubectl exec deploy/<release>-rustdesk-apiserver -- /app/rustdesk-api admission keygen`
+   `kubectl exec -n <namespace> deploy/<fullname>-apiserver -- /app/rustdesk-api admission keygen`
 2. Store it in a Secret:
-   `kubectl create secret generic admission-webhook-key --from-literal=id_ed25519=<private> --from-literal=id_ed25519.pub=<public>`
+   `kubectl create secret generic -n <namespace> admission-webhook-key --from-literal=id_ed25519=<private> --from-literal=id_ed25519.pub=<public>`
 3. Set `deviceAdmission.webhook.url` and `deviceAdmission.webhook.keySecret` (needs
    `deviceAdmission.enabled: true`).
 4. Give the receiver the public key. Read it on the console Devices page, or run
