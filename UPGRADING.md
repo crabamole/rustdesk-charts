@@ -3,6 +3,12 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## Unreleased
+
+The chart has a `deviceAdmission` switch (default `false`; see README "Device admission"). It
+needs rustdesk-server, rustdesk-api and cRustDesk versions with device admission. Those versions
+are filled in at release. Leave the switch off until they are deployed.
+
 ## 0.13.1
 
 0.13.1 ships rustdesk-api 3.8.1: the console footer and tab title name this project and link

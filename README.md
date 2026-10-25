@@ -364,6 +364,18 @@ next heartbeat, within about 15 seconds.
 - The policy restricts what a device allows when someone connects to it; it does not
   limit what its user can do on other machines.
 
+## Device admission
+
+`deviceAdmission: true` (default `false`) sets `DEVICE_ADMISSION=Y` on hbbs and the api-server.
+A device that registers then waits as pending until an admin admits it; only admitted devices
+can be controlled. Devices registered before the switch stay admitted.
+
+- Admit or reject a device on the webconsole's Devices page, or with
+  `rustdesk-api peer admit <id>` (or `peer reject <id>`) in the api-server pod.
+- A reject or admit takes effect within about 5 seconds.
+- A stock RustDesk viewer shows only its own error when a device is not admitted. A cRustDesk
+  device shows "Waiting for remote control approval".
+
 ## Database
 
 hbbs and the api-server run as separate pods sharing one PostgreSQL database. The

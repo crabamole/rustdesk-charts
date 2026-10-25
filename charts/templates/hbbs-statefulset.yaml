@@ -61,6 +61,7 @@ spec:
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_URLS" "value" (include "rustdesk.relayUrls" .)) }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "RELAY_CHECKS" "value" (include "rustdesk.relayChecks" .)) }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" "TRUSTED_PROXIES" "value" (join "," .Values.trustedProxies)) }}
+            {{- $hbbsEnv = append $hbbsEnv (dict "name" "DEVICE_ADMISSION" "value" (ternary "Y" "N" .Values.deviceAdmission)) }}
             {{- range $key, $value := .Values.hbbs.env }}
             {{- if ne $key "HEALTH_PORT" }}
             {{- $hbbsEnv = append $hbbsEnv (dict "name" $key "value" ($value | toString)) }}

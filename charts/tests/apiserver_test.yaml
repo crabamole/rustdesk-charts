@@ -308,3 +308,23 @@ tests:
           content:
             name: SAME_USER_ACCESS
             value: "Y"
+
+  - it: passes DEVICE_ADMISSION N by default
+    template: templates/apiserver-deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEVICE_ADMISSION
+            value: "N"
+
+  - it: passes DEVICE_ADMISSION Y when deviceAdmission is on
+    template: templates/apiserver-deployment.yaml
+    set:
+      deviceAdmission: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEVICE_ADMISSION
+            value: "Y"

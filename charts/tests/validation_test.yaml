@@ -102,6 +102,14 @@ tests:
       - failedTemplate:
           errorPattern: "hbbs.env.TRUSTED_PROXIES: set trustedProxies instead"
 
+  - it: rejects DEVICE_ADMISSION set through a component env
+    set:
+      oidcMock.authorizeUrl: https://oidc.example.com
+      hbbs.env.DEVICE_ADMISSION: "Y"
+    asserts:
+      - failedTemplate:
+          errorPattern: "hbbs.env.DEVICE_ADMISSION: set deviceAdmission instead"
+
   - it: rejects the removed ingress value
     set:
       oidcMock.authorizeUrl: https://oidc.example.com

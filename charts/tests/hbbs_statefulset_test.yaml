@@ -513,3 +513,23 @@ tests:
           content:
             name: TRUSTED_PROXIES
             value: 10.244.0.0/16,192.0.2.0/24
+
+  - it: passes DEVICE_ADMISSION N by default
+    template: templates/hbbs-statefulset.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEVICE_ADMISSION
+            value: "N"
+
+  - it: passes DEVICE_ADMISSION Y when deviceAdmission is on
+    template: templates/hbbs-statefulset.yaml
+    set:
+      deviceAdmission: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: DEVICE_ADMISSION
+            value: "Y"

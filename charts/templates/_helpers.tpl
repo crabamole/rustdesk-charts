@@ -204,6 +204,9 @@ Settings the web client and hbbs cannot work without.
 {{- range $c := list "hbbs" "hbbr" "apiserver" -}}
 {{- if hasKey (index $.Values $c "env") "TRUSTED_PROXIES" -}}{{- fail (printf "%s.env.TRUSTED_PROXIES: set trustedProxies instead" $c) -}}{{- end -}}
 {{- end -}}
+{{- range $c := list "hbbs" "apiserver" -}}
+{{- if hasKey (index $.Values $c "env") "DEVICE_ADMISSION" -}}{{- fail (printf "%s.env.DEVICE_ADMISSION: set deviceAdmission instead" $c) -}}{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

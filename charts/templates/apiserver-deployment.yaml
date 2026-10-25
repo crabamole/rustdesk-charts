@@ -66,6 +66,8 @@ spec:
             {{- end }}
             - name: TRUSTED_PROXIES
               value: {{ join "," .Values.trustedProxies | quote }}
+            - name: DEVICE_ADMISSION
+              value: {{ ternary "Y" "N" .Values.deviceAdmission | quote }}
             - name: PUBLIC_URL
               value: {{ include "rustdesk.publicUrl" . | quote }}
             {{- range $key, $value := .Values.apiserver.env }}
