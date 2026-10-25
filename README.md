@@ -381,10 +381,11 @@ can be controlled. Devices registered before the switch stay admitted.
 A webhook can admit or reject pending devices. The api-server signs each request. The receiver
 checks the signature with the public key.
 
-1. Create the key in the api-server pod:
-   `kubectl exec -n <namespace> deploy/<fullname>-apiserver -- /app/rustdesk-api admission keygen`
-2. Store it in a Secret:
-   `kubectl create secret generic -n <namespace> admission-webhook-key --from-literal=id_ed25519=<private> --from-literal=id_ed25519.pub=<public>`
+1. Create the key in a file:
+   `kubectl exec -n <namespace> deploy/<fullname>-apiserver -- /app/rustdesk-api admission keygen > admission-webhook-key.env`
+2. Store it in a Secret, then delete the file:
+   `kubectl create secret generic -n <namespace> admission-webhook-key --from-env-file=admission-webhook-key.env`
+   `rm admission-webhook-key.env`
 3. Set `deviceAdmission.webhook.url` and `deviceAdmission.webhook.keySecret` (needs
    `deviceAdmission.enabled: true`).
 4. Give the receiver the public key. Read it on the console Devices page, or run
