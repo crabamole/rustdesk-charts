@@ -3,12 +3,22 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
-## Unreleased
+## 0.14.0
 
-The chart has a `deviceAdmission.enabled` switch (default `false`; see README "Device admission").
-`deviceAdmission.webhook.url` and `deviceAdmission.webhook.keySecret` set an admission webhook. It
-needs rustdesk-server, rustdesk-api and cRustDesk versions with device admission. Those versions
-are filled in at release. Leave the switch off until they are deployed.
+0.14.0 ships rustdesk-server 1.1.16-7, rustdesk-api 3.9.0 and web client / clients 1.5.0-6.
+
+- **Device admission.** The chart has a `deviceAdmission.enabled` switch (default `false`; see README
+  "Device admission"). `deviceAdmission.webhook.url` and `deviceAdmission.webhook.keySecret` set an
+  admission webhook. Turn the switch on only after this upgrade is complete. Devices that are
+  already registered stay admitted. Devices older than cRustDesk 1.5.0-6 are refused the same way
+  but do not show "pending" or "rejected" on their home page.
+- **rustdesk-api 3.9.0 adds migrations 0019 and 0020** and runs them at start. rustdesk-server
+  1.1.16-7 writes the new `admission` column when a new device registers. Until rustdesk-api has
+  migrated, hbbs answers a new device's registration with a server error, and the device tries
+  again later. Devices that are already registered are not affected.
+- **Viewers and devices 1.5.0-6 never run a session without end-to-end encryption.** A viewer
+  refuses a device whose key it cannot verify, and a device refuses a viewer that sends no key.
+  Older clients that use "Continue anyway" on a key warning are refused by 1.5.0-6 devices.
 
 ## 0.13.1
 
