@@ -3,6 +3,14 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.14.1
+
+0.14.1 ships web client 2.0.0; rustdesk-server 1.1.16-7, rustdesk-api 3.9.0 and the native clients (1.5.0-6) do not change.
+The web client now has its own version, apart from the native clients.
+
+- **The web client needs Chrome or Edge 94, Safari 16.4 or Firefox 130 or later.** It decodes video
+  with WebCodecs; an older browser shows a message instead of connecting.
+
 ## 0.14.0
 
 0.14.0 ships rustdesk-server 1.1.16-7, rustdesk-api 3.9.0 and web client / clients 1.5.0-6.
