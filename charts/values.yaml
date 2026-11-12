@@ -20,7 +20,7 @@ hbbs:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-server
-    tag: "1.1.16-7"
+    tag: "1.1.16-8"
     pullPolicy: IfNotPresent
   command: ["hbbs"]
   # Devices spread over the pods; at most 32 (the pod ordinal travels in 5 bits).
@@ -54,7 +54,7 @@ hbbr:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk-server
-    tag: "1.1.16-7"
+    tag: "1.1.16-8"
     pullPolicy: IfNotPresent
   command: ["hbbr"]
   # One public URL per pod (wss://<publicHost>/ws/relay/<n>); hbbs picks a ready one.

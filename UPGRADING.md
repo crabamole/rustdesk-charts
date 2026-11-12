@@ -3,6 +3,14 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.14.2
+
+0.14.2 ships rustdesk-server 1.1.16-8; rustdesk-api 3.9.0 and web client 2.0.0 do not change.
+Native clients 1.5.0-7 are released with it. Nothing to do beyond the upgrade.
+
+- hbbs no longer passes a viewer's permission values to the device; the device uses its own
+  settings, including the ones its custom.txt locks.
+
 ## 0.14.1
 
 0.14.1 ships web client 2.0.0; rustdesk-server 1.1.16-7, rustdesk-api 3.9.0 and the native clients (1.5.0-6) do not change.
