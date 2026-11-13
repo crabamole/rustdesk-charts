@@ -79,7 +79,7 @@ webclient:
   image:
     registry: ghcr.io
     repository: crabamole/rustdesk/web-client
-    tag: "2.0.0"
+    tag: "2.0.1"
     pullPolicy: IfNotPresent
   replicas: 1
   # Serves static files only; nothing to drain.

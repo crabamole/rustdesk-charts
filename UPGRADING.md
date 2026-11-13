@@ -3,6 +3,12 @@
 Steps to take before or after `helm upgrade`, newest version first. Versions not
 listed need nothing beyond the upgrade itself.
 
+## 0.14.3
+
+0.14.3 ships web client 2.0.1: the same web client, rebuilt on the current `nginx:alpine` without curl,
+which fixes CVE-2026-111497 (brotli) and seven curl CVEs. rustdesk-server 1.1.16-8, rustdesk-api 3.9.0
+and the native clients (1.5.0-7) do not change. Nothing to do beyond the upgrade.
+
 ## 0.14.2
 
 0.14.2 ships rustdesk-server 1.1.16-8; rustdesk-api 3.9.0 and web client 2.0.0 do not change.
