@@ -499,4 +499,4 @@ connections drop; users log in again only if their sessions had not been replica
 
 ## Upgrading
 
-Version-specific steps are in [UPGRADING.md](UPGRADING.md).
+Each release has its notes and upgrade steps in [releases/](releases/), one file per version.
