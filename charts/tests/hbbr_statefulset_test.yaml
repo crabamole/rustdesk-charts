@@ -22,7 +22,7 @@ tests:
           value: Helm
       - equal:
           path: metadata.labels["app.kubernetes.io/version"]
-          value: "1.5.0"
+          value: "1.5.1"
 
   - it: respects fullnameOverride
     set:
@@ -36,7 +36,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/crabamole/rustdesk-server:1.1.16-8
+          value: ghcr.io/crabamole/rustdesk-server:1.1.16-9
 
   - it: uses global image registry override
     set:
@@ -44,7 +44,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: registry.example.com/crabamole/rustdesk-server:1.1.16-8
+          value: registry.example.com/crabamole/rustdesk-server:1.1.16-9
 
   - it: is a StatefulSet governed by the headless Service, replaced one pod at a time
     asserts:
